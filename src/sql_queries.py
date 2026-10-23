@@ -227,6 +227,86 @@ def get_hourly_distribution() -> pd.DataFrame:
     return execute_query(sql)
 
 
+# ── Day-of-Week vs Hour Heatmap Matrix ───────────────────────────────────────
+
+def get_day_hour_heatmap_matrix(city: Optional[str] = None) -> pd.DataFrame:
+    """
+    Generate accident volume by Day of Week (Monday-Sunday) and Hour (0-23).
+    """
+    where_sql = "1=1"
+    params = []
+    if city and city != "All":
+        where_sql = "city = ?"
+        params.append(city)
+
+    sql = f"""
+    SELECT 
+        day_of_week,
+        hour,
+        COUNT(*) AS incident_count
+    FROM accidents_india
+    WHERE {where_sql}
+    GROUP BY day_of_week, hour
+    ORDER BY hour ASC;
+    """
+    return execute_query(sql, params)
+
+
+# ── State-Level Comparison ───────────────────────────────────────────────────
+
+def get_state_comparisons() -> pd.DataFrame:
+    """
+    Aggregates accident count, casualties, and fatal crash rate across states.
+    """
+    sql = """
+    SELECT 
+        state,
+        COUNT(*) AS total_accidents,
+        SUM(casualties) AS total_casualties,
+        SUM(vehicles_involved) AS total_vehicles,
+        SUM(CASE WHEN accident_severity = 'fatal' THEN 1 ELSE 0 END) AS fatal_accidents,
+        ROUND(SUM(CASE WHEN accident_severity = 'fatal' THEN 1.0 ELSE 0.0 END) * 100.0 / COUNT(*), 2) AS fatal_rate_pct,
+        ROUND(AVG(risk_score), 3) AS avg_risk_score
+    FROM accidents_india
+    GROUP BY state
+    ORDER BY total_accidents DESC;
+    """
+    return execute_query(sql)
+
+
+# ── Vehicle & Collision Dynamics ─────────────────────────────────────────────
+
+def get_vehicle_collision_breakdown() -> pd.DataFrame:
+    """
+    Breakdown of vehicles involved and casualty outcomes.
+    """
+    sql = """
+    SELECT 
+        vehicles_involved,
+        COUNT(*) AS total_accidents,
+        SUM(casualties) AS total_casualties,
+        ROUND(AVG(casualties), 2) AS avg_casualties_per_accident,
+        SUM(CASE WHEN accident_severity = 'fatal' THEN 1 ELSE 0 END) AS fatal_accidents
+    FROM accidents_india
+    GROUP BY vehicles_involved
+    ORDER BY vehicles_involved ASC;
+    """
+    return execute_query(sql)
+
+
+# ── Single Record Inspector ──────────────────────────────────────────────────
+
+def get_detailed_accident_record(accident_id: int) -> Optional[Dict[str, Any]]:
+    """
+    Fetch all 30 fields of a single incident record by accident_id.
+    """
+    sql = "SELECT * FROM accidents_india WHERE accident_id = ? LIMIT 1;"
+    df = execute_query(sql, [int(accident_id)])
+    if df.empty:
+        return None
+    return df.iloc[0].to_dict()
+
+
 # ── Catalog of Predefined Queries for UI ─────────────────────────────────────
 
 PREDEFINED_QUERIES = {
