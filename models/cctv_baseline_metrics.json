@@ -1,0 +1,26 @@
+{
+  "model_architecture": "Baseline (Color Histograms + 32x32 Spatial Thumbnails + LogisticRegression)",
+  "split_used": "split",
+  "train_samples": 791,
+  "test_samples": 100,
+  "train_duration_sec": 1.054,
+  "test_metrics": {
+    "accuracy": 0.65,
+    "macro_precision": 0.649,
+    "macro_recall": 0.6457,
+    "macro_f1": 0.6457,
+    "roc_auc": 0.7005,
+    "confusion_matrix": [
+      [
+        27,
+        20
+      ],
+      [
+        15,
+        38
+      ]
+    ],
+    "sample_count": 100
+  },
+  "created_at": "2026-10-24 00:44:26"
+}

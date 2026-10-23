@@ -312,6 +312,25 @@ def get_database_summary(db_path: Path | str | None = None) -> Dict[str, Any]:
         conn.close()
 
 
+def check_database_integrity(db_path: Path | str | None = None) -> Dict[str, Any]:
+    """Execute PRAGMA integrity_check to verify SQLite database file health."""
+    path = Path(db_path or DATABASE_PATH)
+    if not path.exists():
+        return {"is_ok": False, "error": "Database file does not exist", "tables": []}
+
+    conn = get_db_connection(path, read_only=True)
+    cursor = conn.cursor()
+    try:
+        cursor.execute("PRAGMA integrity_check;")
+        res = cursor.fetchone()
+        is_ok = bool(res and res[0] == "ok")
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%';")
+        tables = [r[0] for r in cursor.fetchall()]
+        return {"is_ok": is_ok, "integrity_result": res[0] if res else "unknown", "tables": tables}
+    finally:
+        conn.close()
+
+
 if __name__ == "__main__":
     init_database(force_recreate=True)
     results = load_data_to_database()

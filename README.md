@@ -1,11 +1,11 @@
 # 🚦 RoadRisk AI — AI-Powered Road Accident Analysis & Risk Intelligence Platform
 
 [![Python](https://img.shields.io/badge/Python-3.12-3776AB.svg?style=flat&logo=python&logoColor=white)](https://www.python.org/)
-[![Streamlit](https://img.shields.io/badge/Streamlit-1.32+-FF4B4B.svg?style=flat&logo=streamlit&logoColor=white)](https://streamlit.io/)
+[![Streamlit](https://img.shields.io/badge/Streamlit-1.66+-FF4B4B.svg?style=flat&logo=streamlit&logoColor=white)](https://streamlit.io/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/pytest-Passing-brightgreen.svg)](tests/)
+[![Tests](https://img.shields.io/badge/pytest-116%20Passed-brightgreen.svg)](tests/)
 
-> **RoadRisk AI** is an end-to-end, multi-source road accident intelligence platform developed as an MCA Data Science portfolio project. It integrates data engineering, SQL analytics, supervised machine learning, geospatial clustering, computer vision on CCTV footage, weather correlation analysis, explainable AI, and a grounded GenAI conversational assistant.
+> **RoadRisk AI** is an end-to-end, multi-source road accident intelligence platform developed as an MCA Data Science portfolio project. It integrates data engineering, relational SQLite analytics, supervised machine learning (with leakage prevention), geospatial clustering, edge computer vision with Grad-CAM, historical weather correlation, explainable AI, and a grounded GenAI conversational assistant with an offline BM25 RAG engine.
 
 ---
 
@@ -14,12 +14,12 @@
 - **📊 Interactive Analytics Dashboard:** High-level KPIs, multi-dimensional breakdowns, trends by timeline, and category distributions.
 - **🔍 Comprehensive Data Explorer:** In-depth schema inspection, data quality reports (null values, duplicates, outliers), search, pagination, and export tools.
 - **🗄️ SQL Analytics Studio:** Structured SQLite analytical database with parameterized queries for historical trends and regional comparisons.
-- **🎯 Accident Severity Classification:** Supervised ML pipeline evaluating Logistic Regression, Random Forest, and Gradient Boosting models with leakage prevention and class imbalance handling.
-- **🗺️ Geospatial Hotspot Explorer:** DBSCAN clustering and density maps distinguishing observed accident concentrations from true traffic risk rates.
-- **🌦️ Historical Weather Intelligence:** Weather feature retrieval via the Open-Meteo API joined defensibly with incident coordinates and timestamps.
-- **📹 CCTV Accident Detection:** Deep-learning frame classification (Accident vs. Non-Accident) on real-world surveillance imagery.
-- **🤖 Grounded AI Safety Assistant:** Google Gemini-powered conversational assistant constrained strictly to verified database facts and statistical summaries.
-- **📈 Explainable AI & Monitoring:** Model transparency powered by SHAP values and feature importance analysis.
+- **🎯 Accident Severity Classification:** Supervised ML pipeline evaluating Random Forest and Gradient Boosting models with strict target leakage prevention (eliminating post-crash casualty outcomes).
+- **🗺️ Geospatial Hotspot Explorer:** DBSCAN clustering with Haversine distance metric distinguishing observed accident concentrations from true traffic risk rates, with separate UK benchmark validation on UrbanGB.
+- **🌦️ Historical Weather Intelligence:** Weather feature retrieval via the Open-Meteo API with SQLite caching and atmospheric risk multipliers.
+- **📹 CCTV Accident Detection & Video Sequence Audit:** MobileNetV2 transfer learning (~9.2 MB footprint, sub-50ms CPU inference) with Grad-CAM attention heatmaps, video stream frame sampling, and an empirical video sequence split leakage audit (93.7% contamination in naive Kaggle splits resolved via GroupShuffleSplit).
+- **🤖 Grounded AI Safety Assistant:** Dual-mode assistant featuring Google Gemini 1.5 Flash paired with a deterministic offline BM25 documentation retriever that prevents hallucinations, blocks prompt injection, and operates on parameterized read-only queries.
+- **📈 Explainable AI & Monitoring:** Model transparency powered by global Gini feature importances, single-incident risk factor decomposition, and explicit causal governance (*Feature Importance ≠ Causality*).
 
 ---
 

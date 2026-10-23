@@ -46,6 +46,7 @@ logger = logging.getLogger(__name__)
 # Default artifact paths
 CCTV_MODEL_PATH = MODELS_DIR / "cctv_mobilenet_v2.pth"
 CCTV_METRICS_PATH = MODELS_DIR / "cctv_model_metrics.json"
+CCTV_BASELINE_METRICS_PATH = MODELS_DIR / "cctv_baseline_metrics.json"
 
 # In-memory singleton cache
 _LOADED_MODEL = None
@@ -287,18 +288,22 @@ def load_cctv_model(
     model_path: Path = CCTV_MODEL_PATH,
     device: Optional[str] = None,
     force_reload: bool = False,
+    require_custom_weights: bool = False,
 ) -> Tuple[nn.Module, str]:
     """
     Load the trained MobileNetV2 CCTV classifier into memory (singleton pattern).
-    If no saved weights exist, instantiates a pre-trained backbone.
+    If no saved weights exist, instantiates a pre-trained backbone unless require_custom_weights=True.
     """
     global _LOADED_MODEL, _LOADED_DEVICE
 
     if device is None:
         device = "cuda" if torch.cuda.is_available() else "cpu"
 
-    if _LOADED_MODEL is not None and not force_reload and _LOADED_DEVICE == device:
+    if _LOADED_MODEL is not None and not force_reload and _LOADED_DEVICE == device and not require_custom_weights:
         return _LOADED_MODEL, _LOADED_DEVICE
+
+    if require_custom_weights and not model_path.exists():
+        raise FileNotFoundError(f"Required CCTV model weights not found at {model_path}")
 
     model = build_cctv_classifier(pretrained=True, freeze_features=False)
 
@@ -473,6 +478,189 @@ def generate_cctv_gradcam(
     overlay_img = Image.fromarray(overlay)
 
     return overlay_img, cam_resized
+
+
+# ── Baseline Model Benchmark & Video Frame Sampling ──────────────────────────
+
+def evaluate_cctv_baseline(
+    manifest_df: Optional[pd.DataFrame] = None,
+    split_col: str = "split",
+    save_metrics: bool = True,
+    metrics_path: Path = CCTV_BASELINE_METRICS_PATH,
+) -> Dict[str, Any]:
+    """
+    Train and evaluate a lightweight feature-engineering baseline
+    (Color Histograms + Spatial Downsampling + Logistic Regression).
+    
+    Provides an empirical benchmark against which deep transfer learning (MobileNetV2)
+    can be rigorously compared.
+    """
+    from sklearn.linear_model import LogisticRegression
+    from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, confusion_matrix, roc_auc_score
+
+    if manifest_df is None:
+        manifest_df = scan_cctv_manifest(verify_images=False)
+
+    col = split_col if split_col in manifest_df.columns else "split"
+    train_df = manifest_df[manifest_df[col] == "train"].reset_index(drop=True)
+    test_df = manifest_df[manifest_df[col] == "test"].reset_index(drop=True)
+
+    if train_df.empty or test_df.empty:
+        logger.warning("Train or test split empty for baseline evaluation.")
+        return {}
+
+    def extract_baseline_features(filepaths: List[str]) -> np.ndarray:
+        feats = []
+        for fp in filepaths:
+            try:
+                with Image.open(fp) as im:
+                    im_rgb = im.convert("RGB").resize((32, 32))
+                    arr = np.array(im_rgb, dtype=np.float32) / 255.0
+                    # Spatial thumbnail (32x32x3 = 3072) + 8-bin channel histograms (24)
+                    thumb_flat = arr.flatten()
+                    r_hist, _ = np.histogram(arr[:, :, 0], bins=8, range=(0, 1))
+                    g_hist, _ = np.histogram(arr[:, :, 1], bins=8, range=(0, 1))
+                    b_hist, _ = np.histogram(arr[:, :, 2], bins=8, range=(0, 1))
+                    feat = np.concatenate([thumb_flat, r_hist, g_hist, b_hist])
+                    feats.append(feat)
+            except Exception as e:
+                logger.warning(f"Error extracting features for {fp}: {e}")
+                feats.append(np.zeros(32 * 32 * 3 + 24, dtype=np.float32))
+        return np.array(feats, dtype=np.float32)
+
+    logger.info("Extracting baseline feature vectors from CCTV images...")
+    X_train = extract_baseline_features(train_df["filepath"].tolist())
+    y_train = train_df["class_idx"].values
+    X_test = extract_baseline_features(test_df["filepath"].tolist())
+    y_test = test_df["class_idx"].values
+
+    clf = LogisticRegression(max_iter=300, random_state=42)
+    start_t = time.time()
+    clf.fit(X_train, y_train)
+    train_duration = round(time.time() - start_t, 3)
+
+    y_pred = clf.predict(X_test)
+    y_proba = clf.predict_proba(X_test)[:, 0]  # prob of Accident (class 0)
+
+    acc = float(accuracy_score(y_test, y_pred))
+    prec = float(precision_score(y_test, y_pred, average="macro", zero_division=0))
+    rec = float(recall_score(y_test, y_pred, average="macro", zero_division=0))
+    f1 = float(f1_score(y_test, y_pred, average="macro", zero_division=0))
+    cm = confusion_matrix(y_test, y_pred).tolist()
+
+    try:
+        # roc_auc computed on class 1 vs 0
+        roc_auc = float(roc_auc_score(y_test, clf.predict_proba(X_test)[:, 1]))
+    except Exception:
+        roc_auc = 0.5
+
+    baseline_metrics = {
+        "model_architecture": "Baseline (Color Histograms + 32x32 Spatial Thumbnails + LogisticRegression)",
+        "split_used": col,
+        "train_samples": len(train_df),
+        "test_samples": len(test_df),
+        "train_duration_sec": train_duration,
+        "test_metrics": {
+            "accuracy": round(acc, 4),
+            "macro_precision": round(prec, 4),
+            "macro_recall": round(rec, 4),
+            "macro_f1": round(f1, 4),
+            "roc_auc": round(roc_auc, 4),
+            "confusion_matrix": cm,
+            "sample_count": len(test_df),
+        },
+        "created_at": time.strftime("%Y-%m-%d %H:%M:%S"),
+    }
+
+    if save_metrics:
+        try:
+            with open(metrics_path, "w", encoding="utf-8") as f:
+                json.dump(baseline_metrics, f, indent=2)
+            logger.info(f"Saved baseline CCTV metrics to {metrics_path}")
+        except Exception as e:
+            logger.warning(f"Could not save baseline metrics: {e}")
+
+    return baseline_metrics
+
+
+def sample_video_frames(
+    video_input: Union[str, Path, bytes, Any],
+    sample_interval_sec: float = 1.0,
+    max_frames: int = 60,
+) -> List[Dict[str, Any]]:
+    """
+    Extract evenly spaced frames from a surveillance video file for offline crash auditing.
+    
+    Parameters:
+    - video_input: file path, bytes, or Streamlit UploadedFile object.
+    - sample_interval_sec: temporal sampling interval in seconds (default: 1.0s).
+    - max_frames: safety upper-bound on extracted frames to preserve memory (default: 60).
+    
+    Returns:
+    - List of dicts: {"timestamp_sec": float, "frame_index": int, "image": PIL.Image}
+    """
+    import cv2
+    import tempfile
+
+    temp_path = None
+    if isinstance(video_input, (str, Path)):
+        video_path = str(video_input)
+    elif hasattr(video_input, "read"):
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".mp4") as tmp:
+            tmp.write(video_input.read())
+            temp_path = tmp.name
+        video_path = temp_path
+    elif isinstance(video_input, bytes):
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".mp4") as tmp:
+            tmp.write(video_input)
+            temp_path = tmp.name
+        video_path = temp_path
+    else:
+        raise ValueError("Unsupported video_input type. Expected Path, str, bytes, or file-like object.")
+
+    cap = cv2.VideoCapture(video_path)
+    if not cap.isOpened():
+        if temp_path and os.path.exists(temp_path):
+            os.remove(temp_path)
+        raise IOError(f"Could not open video stream from {video_path}")
+
+    fps = cap.get(cv2.CAP_PROP_FPS)
+    if fps <= 0 or np.isnan(fps):
+        fps = 25.0  # standard fallback CCTV FPS
+
+    frame_interval = max(1, int(round(fps * sample_interval_sec)))
+    total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+
+    sampled_results = []
+    current_frame = 0
+
+    try:
+        while cap.isOpened() and len(sampled_results) < max_frames:
+            ret, frame = cap.read()
+            if not ret:
+                break
+
+            if current_frame % frame_interval == 0:
+                # Convert BGR OpenCV frame to RGB PIL Image
+                rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                pil_img = Image.fromarray(rgb_frame)
+                timestamp = round(current_frame / fps, 2)
+                sampled_results.append({
+                    "timestamp_sec": timestamp,
+                    "frame_index": current_frame,
+                    "image": pil_img,
+                })
+
+            current_frame += 1
+    finally:
+        cap.release()
+        if temp_path and os.path.exists(temp_path):
+            try:
+                os.remove(temp_path)
+            except Exception:
+                pass
+
+    return sampled_results
 
 
 if __name__ == "__main__":

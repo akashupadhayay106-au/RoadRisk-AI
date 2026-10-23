@@ -1,0 +1,177 @@
+[
+  {
+    "feature": "Day_of_week",
+    "importance": 0.07970679920790534,
+    "importance_pct": 7.970679920790534,
+    "cumulative_pct": 7.970679920790534,
+    "rank": 1
+  },
+  {
+    "feature": "Cause_of_accident",
+    "importance": 0.07339931794792856,
+    "importance_pct": 7.339931794792856,
+    "cumulative_pct": 15.310611715583391,
+    "rank": 2
+  },
+  {
+    "feature": "Number_of_casualties",
+    "importance": 0.0715116496750626,
+    "importance_pct": 7.15116496750626,
+    "cumulative_pct": 22.461776683089653,
+    "rank": 3
+  },
+  {
+    "feature": "Hour",
+    "importance": 0.07080886676813886,
+    "importance_pct": 7.080886676813885,
+    "cumulative_pct": 29.54266335990354,
+    "rank": 4
+  },
+  {
+    "feature": "Type_of_vehicle",
+    "importance": 0.06430229862249802,
+    "importance_pct": 6.430229862249802,
+    "cumulative_pct": 35.97289322215334,
+    "rank": 5
+  },
+  {
+    "feature": "Driving_experience",
+    "importance": 0.051489029250484104,
+    "importance_pct": 5.148902925048411,
+    "cumulative_pct": 41.12179614720175,
+    "rank": 6
+  },
+  {
+    "feature": "Age_band_of_driver",
+    "importance": 0.05082978466674934,
+    "importance_pct": 5.082978466674934,
+    "cumulative_pct": 46.20477461387668,
+    "rank": 7
+  },
+  {
+    "feature": "Lanes_or_Medians",
+    "importance": 0.04893808584591591,
+    "importance_pct": 4.893808584591591,
+    "cumulative_pct": 51.09858319846827,
+    "rank": 8
+  },
+  {
+    "feature": "Area_accident_occured",
+    "importance": 0.048745030596413774,
+    "importance_pct": 4.874503059641377,
+    "cumulative_pct": 55.973086258109646,
+    "rank": 9
+  },
+  {
+    "feature": "Types_of_Junction",
+    "importance": 0.045309624287939665,
+    "importance_pct": 4.530962428793966,
+    "cumulative_pct": 60.504048686903616,
+    "rank": 10
+  },
+  {
+    "feature": "Time_of_Day",
+    "importance": 0.044601923877479285,
+    "importance_pct": 4.460192387747928,
+    "cumulative_pct": 64.96424107465154,
+    "rank": 11
+  },
+  {
+    "feature": "Educational_level",
+    "importance": 0.03805405237336686,
+    "importance_pct": 3.8054052373366862,
+    "cumulative_pct": 68.76964631198823,
+    "rank": 12
+  },
+  {
+    "feature": "Service_year_of_vehicle",
+    "importance": 0.03620374238913943,
+    "importance_pct": 3.6203742389139433,
+    "cumulative_pct": 72.39002055090216,
+    "rank": 13
+  },
+  {
+    "feature": "Vehicle_movement",
+    "importance": 0.03473209717898518,
+    "importance_pct": 3.4732097178985177,
+    "cumulative_pct": 75.86323026880068,
+    "rank": 14
+  },
+  {
+    "feature": "Number_of_vehicles_involved",
+    "importance": 0.03457256660843789,
+    "importance_pct": 3.457256660843789,
+    "cumulative_pct": 79.32048692964446,
+    "rank": 15
+  },
+  {
+    "feature": "Type_of_collision",
+    "importance": 0.03284545998042545,
+    "importance_pct": 3.284545998042545,
+    "cumulative_pct": 82.605032927687,
+    "rank": 16
+  },
+  {
+    "feature": "Vehicle_driver_relation",
+    "importance": 0.03069530179897929,
+    "importance_pct": 3.069530179897929,
+    "cumulative_pct": 85.67456310758493,
+    "rank": 17
+  },
+  {
+    "feature": "Light_conditions",
+    "importance": 0.02758738358700908,
+    "importance_pct": 2.758738358700908,
+    "cumulative_pct": 88.43330146628584,
+    "rank": 18
+  },
+  {
+    "feature": "Weather_conditions",
+    "importance": 0.022354208053326483,
+    "importance_pct": 2.235420805332648,
+    "cumulative_pct": 90.66872227161849,
+    "rank": 19
+  },
+  {
+    "feature": "Defect_of_vehicle",
+    "importance": 0.021482200904992785,
+    "importance_pct": 2.1482200904992785,
+    "cumulative_pct": 92.81694236211777,
+    "rank": 20
+  },
+  {
+    "feature": "Road_allignment",
+    "importance": 0.020977812668249114,
+    "importance_pct": 2.0977812668249114,
+    "cumulative_pct": 94.91472362894268,
+    "rank": 21
+  },
+  {
+    "feature": "Road_surface_conditions",
+    "importance": 0.0175126410288674,
+    "importance_pct": 1.75126410288674,
+    "cumulative_pct": 96.66598773182942,
+    "rank": 22
+  },
+  {
+    "feature": "Owner_of_vehicle",
+    "importance": 0.014766211083825715,
+    "importance_pct": 1.4766211083825715,
+    "cumulative_pct": 98.14260884021199,
+    "rank": 23
+  },
+  {
+    "feature": "Road_surface_type",
+    "importance": 0.009335298914230974,
+    "importance_pct": 0.9335298914230974,
+    "cumulative_pct": 99.07613873163508,
+    "rank": 24
+  },
+  {
+    "feature": "Sex_of_driver",
+    "importance": 0.009238612683648874,
+    "importance_pct": 0.9238612683648874,
+    "cumulative_pct": 99.99999999999997,
+    "rank": 25
+  }
+]

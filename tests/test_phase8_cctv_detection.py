@@ -138,3 +138,84 @@ class TestCCTVGradCAM:
         assert cam.shape == (224, 224)
         assert cam.min() >= 0.0
         assert cam.max() <= 1.0
+
+
+class TestCCTVVideoSequenceGrouping:
+    """Validate video sequence extraction, leakage auditing, and grouped splitting."""
+
+    def test_extract_source_video_id(self):
+        from src.cctv_preprocessing import extract_source_video_id
+
+        assert extract_source_video_id("acc1 (12).jpg") == "acc1"
+        assert extract_source_video_id("acc1 (1).jpg") == "acc1"
+        assert extract_source_video_id("test10_12.jpg") == "test10"
+        assert extract_source_video_id("5_14.jpg") == "5"
+        assert extract_source_video_id("highway_cam_01_100.jpg") == "highway_cam_01"
+        assert extract_source_video_id("singleframe.jpg") == "singleframe"
+
+    def test_audit_split_leakage_detection(self):
+        from src.cctv_preprocessing import scan_cctv_manifest, audit_split_leakage
+
+        manifest = scan_cctv_manifest(verify_images=False)
+        audit_res = audit_split_leakage(manifest)
+
+        assert audit_res["status"] == "audited"
+        assert audit_res["total_frames"] >= 980
+        assert audit_res["total_groups"] > 0
+        assert audit_res["leaking_groups_count"] > 0
+        assert audit_res["leakage_percentage"] > 50.0  # Naive split has severe leakage
+        assert "class_breakdown" in audit_res
+        assert "Accident" in audit_res["class_breakdown"]
+        assert "Non Accident" in audit_res["class_breakdown"]
+
+    def test_create_leakage_free_splits(self):
+        from src.cctv_preprocessing import scan_cctv_manifest, create_leakage_free_splits
+
+        manifest = scan_cctv_manifest(verify_images=False)
+        df_grouped = create_leakage_free_splits(manifest, test_ratio=0.15, val_ratio=0.15, random_state=42)
+
+        assert "grouped_split" in df_grouped.columns
+        splits = set(df_grouped["grouped_split"].unique())
+        assert {"train", "val", "test"} == splits
+
+        # Check ZERO group overlap across train, val, and test splits
+        for cls in ["Accident", "Non Accident"]:
+            cls_df = df_grouped[df_grouped["class_name"] == cls]
+            train_groups = set(cls_df[cls_df["grouped_split"] == "train"]["video_group"].unique())
+            val_groups = set(cls_df[cls_df["grouped_split"] == "val"]["video_group"].unique())
+            test_groups = set(cls_df[cls_df["grouped_split"] == "test"]["video_group"].unique())
+
+            # Intersections MUST BE EMPTY
+            assert len(train_groups.intersection(val_groups)) == 0
+            assert len(train_groups.intersection(test_groups)) == 0
+            assert len(val_groups.intersection(test_groups)) == 0
+
+
+class TestCCTVBaselineAndVideo:
+    """Validate baseline model benchmarking and video stream processing."""
+
+    def test_cctv_baseline_metrics_artifact(self):
+        from src.cctv_inference import CCTV_BASELINE_METRICS_PATH
+
+        assert CCTV_BASELINE_METRICS_PATH.exists()
+        with open(CCTV_BASELINE_METRICS_PATH, "r", encoding="utf-8") as f:
+            b_metrics = json.load(f)
+
+        assert "test_metrics" in b_metrics
+        assert 0.40 <= b_metrics["test_metrics"]["accuracy"] <= 1.0
+        assert "macro_f1" in b_metrics["test_metrics"]
+        assert "confusion_matrix" in b_metrics["test_metrics"]
+
+    def test_sample_video_frames_invalid_file(self):
+        from src.cctv_inference import sample_video_frames
+
+        with pytest.raises(Exception):
+            sample_video_frames("nonexistent_video_feed_xyz.mp4")
+
+    def test_load_cctv_model_missing_weights(self):
+        from src.cctv_inference import load_cctv_model
+
+        # When pointing to a nonexistent weights file with require_custom_weights=True, it should raise FileNotFoundError
+        with pytest.raises(FileNotFoundError):
+            load_cctv_model(model_path=Path("nonexistent_model_weights.pth"), force_reload=True, require_custom_weights=True)
+

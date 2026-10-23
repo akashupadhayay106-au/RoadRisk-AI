@@ -1,0 +1,12 @@
+# RoadRisk AI — Project Risk Register & Ethical Governance
+
+| Risk ID | Category | Description | Severity | Likelihood | Mitigation Strategy & Scientific Controls |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **R-01** | Data Leakage | Post-event outcome attributes (casualties, police codes) leaking into ML severity predictors. | Critical | High | Hardcoded exclusion list in `src/features.py`; automated unit tests in `test_phase5_severity_model.py`. |
+| **R-02** | CV Split Leakage | CCTV frames from identical video clips sharing backgrounds across train/test splits. | Critical | High | Group-based sequence ID extraction heuristic; GroupShuffleSplit manifest generator (`cctv_grouped_manifest.csv`). |
+| **R-03** | Geographic Conflation | UrbanGB (Great Britain) accident records mistakenly merged or labelled as Indian roads. | Critical | Medium | Dedicated UK coordinate boundary test [49.8°N–60.9°N, -8.6°W–1.8°E]; separate SQLite tables; explicit UI labels. |
+| **R-04** | Exposure Bias | Interpreting raw accident counts as per-capita or per-vehicle risk without exposure normalization. | High | High | Prominent UI warnings clarifying that accident counts correlate with traffic volume and vehicle density. |
+| **R-05** | Prompt Injection | Malicious user queries attempting to override LLM system rules or extract secret keys. | Critical | Medium | Regex-based prompt sanitization; rejection of jailbreak tokens; hard prohibition of secrets in code/logs. |
+| **R-06** | SQL Injection | Malicious or arbitrary SQL execution via conversational assistant or custom queries. | Critical | Medium | Parameterized SQL queries only; read-only allowlist; blocking of DDL/DML keywords (`DROP`, `DELETE`, etc.). |
+| **R-07** | Hallucination | LLM inventing non-existent accident statistics, citations, or model accuracies. | High | Medium | Grounded RAG architecture; strict "report uncertainty" policy; mandatory citations to indexed project docs. |
+| **R-08** | Operational Misuse | CCTV prototype deployed as an autonomous emergency dispatch system without human oversight. | Critical | Low | Comprehensive disclaimers stating prototype is educational and requires human-in-the-loop operator confirmation. |
