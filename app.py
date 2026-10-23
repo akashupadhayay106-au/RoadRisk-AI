@@ -179,7 +179,7 @@ def render_home():
         ("🗄️", "SQL Analytics",       "Query accident database with SQL",     "3_SQL_Analytics",       "ready"),
         ("🎯", "Severity Prediction", "ML classification of accident severity","4_Severity_Prediction","ready"),
         ("🗺️", "Hotspot Map",        "Geospatial clustering & heatmaps",     "5_Hotspot_Map",         "ready"),
-        ("🌦️", "Weather Analysis",   "Historical weather & accident links",  "6_Weather_Analysis",    "pending"),
+        ("🌦️", "Weather Analysis",   "Historical weather & accident links",  "6_Weather_Analysis",    "ready"),
         ("📹", "CCTV Detection",      "Computer vision accident detection",   "7_CCTV_Detection",      "pending"),
         ("🤖", "AI Assistant",        "Gemini-powered road safety Q&A",       "8_AI_Assistant",        "pending"),
         ("📈", "Explainability",      "SHAP, feature importance & monitoring","9_Model_Explainability","pending"),
