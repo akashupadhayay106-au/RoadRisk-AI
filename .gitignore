@@ -1,0 +1,79 @@
+# ============================================================================
+# RoadRisk AI — .gitignore
+# ============================================================================
+
+# ---------- Python ----------
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# ---------- Virtual Environment ----------
+.venv/
+venv/
+ENV/
+
+# ---------- Environment / Secrets ----------
+.env
+.env.*
+.streamlit/secrets.toml
+
+# ---------- IDE ----------
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ---------- OS ----------
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ---------- Data (keep raw originals local, don't push large files) ----------
+data/raw/*.csv
+data/raw/*.xlsx
+data/raw/*.zip
+data/raw/*.txt
+data/raw/*.png
+data/raw/cctv/
+
+# ---------- CCTV images (too large for GitHub) ----------
+data/train/
+data/test/
+data/val/
+
+# ---------- Processed data (can be regenerated) ----------
+data/processed/
+
+# ---------- Model artifacts ----------
+models/*.joblib
+models/*.pkl
+models/*.pt
+models/*.pth
+models/*.h5
+
+# ---------- Database ----------
+*.db
+*.sqlite
+*.sqlite3
+
+# ---------- Jupyter ----------
+.ipynb_checkpoints/
+
+# ---------- pytest / coverage ----------
+.pytest_cache/
+htmlcov/
+.coverage
+
+# ---------- Build ----------
+dist/
+build/
+*.egg-info/
+
+# ---------- Logs ----------
+*.log
+
+# ---------- Misc ----------
+scratch/
+temp/
