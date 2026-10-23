@@ -1,0 +1,229 @@
+{
+  "best_model": "Random Forest",
+  "classes": [
+    "Fatal injury",
+    "Serious Injury",
+    "Slight Injury"
+  ],
+  "feature_count": 25,
+  "categorical_features": [
+    "Day_of_week",
+    "Age_band_of_driver",
+    "Sex_of_driver",
+    "Educational_level",
+    "Vehicle_driver_relation",
+    "Driving_experience",
+    "Type_of_vehicle",
+    "Owner_of_vehicle",
+    "Service_year_of_vehicle",
+    "Defect_of_vehicle",
+    "Area_accident_occured",
+    "Lanes_or_Medians",
+    "Road_allignment",
+    "Types_of_Junction",
+    "Road_surface_type",
+    "Road_surface_conditions",
+    "Light_conditions",
+    "Weather_conditions",
+    "Type_of_collision",
+    "Vehicle_movement",
+    "Cause_of_accident",
+    "Time_of_Day"
+  ],
+  "numerical_features": [
+    "Number_of_vehicles_involved",
+    "Number_of_casualties",
+    "Hour"
+  ],
+  "comparison": {
+    "Logistic Regression (Baseline)": {
+      "accuracy": 0.5566,
+      "macro_f1": 0.3388,
+      "weighted_f1": 0.6355,
+      "macro_precision": 0.3692,
+      "macro_recall": 0.466,
+      "classes": [
+        "Fatal injury",
+        "Serious Injury",
+        "Slight Injury"
+      ],
+      "per_class": {
+        "Fatal injury": {
+          "precision": 0.0347,
+          "recall": 0.3529,
+          "f1_score": 0.0632
+        },
+        "Serious Injury": {
+          "precision": 0.174,
+          "recall": 0.4737,
+          "f1_score": 0.2545
+        },
+        "Slight Injury": {
+          "precision": 0.8989,
+          "recall": 0.5713,
+          "f1_score": 0.6986
+        }
+      },
+      "confusion_matrix": [
+        [
+          6,
+          7,
+          4
+        ],
+        [
+          23,
+          99,
+          87
+        ],
+        [
+          144,
+          463,
+          809
+        ]
+      ],
+      "confusion_matrix_normalized": [
+        [
+          0.3529,
+          0.4118,
+          0.2353
+        ],
+        [
+          0.11,
+          0.4737,
+          0.4163
+        ],
+        [
+          0.1017,
+          0.327,
+          0.5713
+        ]
+      ]
+    },
+    "Random Forest": {
+      "accuracy": 0.8417,
+      "macro_f1": 0.4698,
+      "weighted_f1": 0.8166,
+      "macro_precision": 0.6491,
+      "macro_recall": 0.4283,
+      "classes": [
+        "Fatal injury",
+        "Serious Injury",
+        "Slight Injury"
+      ],
+      "per_class": {
+        "Fatal injury": {
+          "precision": 0.75,
+          "recall": 0.1765,
+          "f1_score": 0.2857
+        },
+        "Serious Injury": {
+          "precision": 0.3204,
+          "recall": 0.1579,
+          "f1_score": 0.2115
+        },
+        "Slight Injury": {
+          "precision": 0.8769,
+          "recall": 0.9506,
+          "f1_score": 0.9122
+        }
+      },
+      "confusion_matrix": [
+        [
+          3,
+          1,
+          13
+        ],
+        [
+          0,
+          33,
+          176
+        ],
+        [
+          1,
+          69,
+          1346
+        ]
+      ],
+      "confusion_matrix_normalized": [
+        [
+          0.1765,
+          0.0588,
+          0.7647
+        ],
+        [
+          0.0,
+          0.1579,
+          0.8421
+        ],
+        [
+          0.0007,
+          0.0487,
+          0.9506
+        ]
+      ]
+    },
+    "XGBoost Classifier": {
+      "accuracy": 0.8642,
+      "macro_f1": 0.3614,
+      "weighted_f1": 0.8063,
+      "macro_precision": 0.8301,
+      "macro_recall": 0.3602,
+      "classes": [
+        "Fatal injury",
+        "Serious Injury",
+        "Slight Injury"
+      ],
+      "per_class": {
+        "Fatal injury": {
+          "precision": 1.0,
+          "recall": 0.0588,
+          "f1_score": 0.1111
+        },
+        "Serious Injury": {
+          "precision": 0.625,
+          "recall": 0.0239,
+          "f1_score": 0.0461
+        },
+        "Slight Injury": {
+          "precision": 0.8653,
+          "recall": 0.9979,
+          "f1_score": 0.9269
+        }
+      },
+      "confusion_matrix": [
+        [
+          1,
+          0,
+          16
+        ],
+        [
+          0,
+          5,
+          204
+        ],
+        [
+          0,
+          3,
+          1413
+        ]
+      ],
+      "confusion_matrix_normalized": [
+        [
+          0.0588,
+          0.0,
+          0.9412
+        ],
+        [
+          0.0,
+          0.0239,
+          0.9761
+        ],
+        [
+          0.0,
+          0.0021,
+          0.9979
+        ]
+      ]
+    }
+  }
+}
