@@ -1,0 +1,48 @@
+{
+  "model_architecture": "MobileNetV2 (ImageNet Transfer Learning)",
+  "epochs": 2,
+  "batch_size": 32,
+  "learning_rate": 0.001,
+  "device": "cpu",
+  "test_metrics": {
+    "accuracy": 0.81,
+    "macro_precision": 0.8096,
+    "macro_recall": 0.8087,
+    "macro_f1": 0.8091,
+    "roc_auc": 0.8266,
+    "confusion_matrix": [
+      [
+        37,
+        10
+      ],
+      [
+        9,
+        44
+      ]
+    ],
+    "sample_count": 100
+  },
+  "training_history": [
+    {
+      "epoch": 1,
+      "train_loss": 0.6637,
+      "train_acc": 0.6068,
+      "val_loss": 0.5961,
+      "val_acc": 0.6633,
+      "duration_sec": 74.72
+    },
+    {
+      "epoch": 2,
+      "train_loss": 0.5921,
+      "train_acc": 0.7067,
+      "val_loss": 0.5377,
+      "val_acc": 0.7653,
+      "duration_sec": 68.1
+    }
+  ],
+  "classes": [
+    "Accident",
+    "Non Accident"
+  ],
+  "created_at": "2026-10-23 23:57:43"
+}
