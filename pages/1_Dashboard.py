@@ -1,8 +1,8 @@
 """
 📊 Dashboard — Interactive Analytics & KPI Overview
 =====================================================
-Module A: Displays summary statistics, trends, and breakdowns
-from the loaded accident datasets.
+Module A: Displays interactive summary statistics, temporal trends,
+city breakdowns, and atmospheric associations from the database.
 """
 
 import streamlit as st
@@ -11,142 +11,297 @@ import plotly.express as px
 import plotly.graph_objects as go
 from pathlib import Path
 
-from src.config import PAGE_CONFIG, COLORS, PROJECT_ROOT, RAW_DATA_DIR
+from src.config import PAGE_CONFIG, COLORS
 from src.utils import (
     inject_custom_css,
     setup_sidebar,
     section_header,
     render_kpi_row,
     info_card,
-    load_csv_cached,
 )
+from src.database import execute_query, DATABASE_PATH, load_data_to_database
+from src.sql_queries import get_overall_kpis, get_monthly_trends
 
 st.set_page_config(**PAGE_CONFIG)
 inject_custom_css()
 setup_sidebar()
 
-# ── Page Title ───────────────────────────────────────────────────────────────
+# ── Ensure Database is Initialized ───────────────────────────────────────────
+if not DATABASE_PATH.exists():
+    with st.spinner("Preparing analytical database…"):
+        load_data_to_database()
+
+# ── Header ───────────────────────────────────────────────────────────────────
 st.markdown("""
 <h1 style="
-    font-size: 2rem; font-weight: 800;
+    font-size: 2.2rem; font-weight: 800;
     background: linear-gradient(135deg, #FF4B4B, #FF8C42);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
-">📊 Analytics Dashboard</h1>
+">📊 Executive Road Safety Dashboard</h1>
 <p style="color: #8899A6; margin-top: -0.5rem;">
-    Explore accident statistics, trends, and breakdowns from the loaded datasets.
+    Exploratory intelligence, trend trajectories, and risk patterns across 20,000 audited Indian road incidents.
 </p>
 """, unsafe_allow_html=True)
 st.divider()
 
+# ── Sidebar Filters ──────────────────────────────────────────────────────────
+with st.sidebar:
+    st.markdown("### 🎛️ Analytics Filters")
 
-# ── Load Data ────────────────────────────────────────────────────────────────
+    # City filter
+    cities_df = execute_query("SELECT DISTINCT city FROM accidents_india ORDER BY city ASC;")
+    city_options = ["All"] + cities_df["city"].tolist()
+    selected_city = st.selectbox("Select City:", city_options, index=0)
 
-def _find_csv(name: str) -> Path | None:
-    """Look in raw/ then project root."""
-    for parent in [RAW_DATA_DIR, PROJECT_ROOT]:
-        p = parent / name
-        if p.exists():
-            return p
-    return None
+    # Year filter
+    years_df = execute_query("SELECT DISTINCT year FROM accidents_india ORDER BY year ASC;")
+    year_options = ["All"] + [str(y) for y in years_df["year"].tolist()]
+    selected_year = st.selectbox("Select Year:", year_options, index=0)
 
-indian_path = _find_csv("indian_roads_dataset.csv")
+    # Severity filter
+    severity_options = ["All", "Minor", "Major", "Fatal"]
+    selected_severity = st.selectbox("Accident Severity:", severity_options, index=0)
 
-if indian_path is None:
-    st.warning(
-        "⚠️ **Indian Road Accident Dataset not found.**\n\n"
-        "Please download it from "
-        "[Kaggle](https://www.kaggle.com/datasets/sehaj1104/indian-road-accident-dataset-20222025) "
-        "and place `indian_roads_dataset.csv` in the `data/raw/` folder.\n\n"
-        "The dashboard will populate once data is available."
-    )
-    st.stop()
+    # Weather filter
+    weather_df = execute_query("SELECT DISTINCT weather FROM accidents_india ORDER BY weather ASC;")
+    weather_options = ["All"] + [w.title() for w in weather_df["weather"].tolist()]
+    selected_weather = st.selectbox("Weather Condition:", weather_options, index=0)
 
-df = load_csv_cached(str(indian_path))
+    st.markdown("---")
+    st.caption("Filters update all dashboard KPIs and visualizations in real time.")
 
-if df is None or df.empty:
-    st.error("Dataset loaded but appears empty. Please check the file.")
-    st.stop()
 
-# ── Show Available Columns (temporary — useful for Phase 2 inspection) ───────
-with st.expander("🔎 Raw Column Inspection (for development)"):
-    st.write(f"**Shape:** {df.shape[0]:,} rows × {df.shape[1]} columns")
-    st.write("**Columns:**", list(df.columns))
-    st.write("**Data types:**")
-    st.dataframe(df.dtypes.reset_index().rename(columns={"index": "Column", 0: "Type"}))
-    st.write("**First 5 rows:**")
-    st.dataframe(df.head())
+# ── Filtered Query Construction ──────────────────────────────────────────────
+where_clauses = ["1=1"]
+params = []
 
-# ── Basic KPIs ───────────────────────────────────────────────────────────────
-section_header("Key Metrics", "📈")
+if selected_city != "All":
+    where_clauses.append("city = ?")
+    params.append(selected_city)
+if selected_year != "All":
+    where_clauses.append("year = ?")
+    params.append(int(selected_year))
+if selected_severity != "All":
+    where_clauses.append("accident_severity = ?")
+    params.append(selected_severity.lower())
+if selected_weather != "All":
+    where_clauses.append("weather = ?")
+    params.append(selected_weather.lower())
 
-total_records = len(df)
-num_columns = len(df.columns)
+where_sql = " AND ".join(where_clauses)
 
-# Try to detect common column names (we'll refine in Phase 2)
-numeric_cols = df.select_dtypes(include="number").columns.tolist()
-kpis = [
-    ("📋", "Total Records", total_records),
-    ("📊", "Features", num_columns),
-    ("🔢", "Numeric Columns", len(numeric_cols)),
-    ("📝", "Text Columns", num_columns - len(numeric_cols)),
-]
-render_kpi_row(kpis)
+
+# ── 1. KPI Cards ─────────────────────────────────────────────────────────────
+kpi_sql = f"""
+SELECT 
+    COUNT(*) AS total_accidents,
+    COALESCE(SUM(casualties), 0) AS total_casualties,
+    COALESCE(SUM(vehicles_involved), 0) AS total_vehicles,
+    COALESCE(SUM(CASE WHEN accident_severity = 'fatal' THEN 1 ELSE 0 END), 0) AS fatal_accidents,
+    COALESCE(SUM(CASE WHEN accident_severity = 'major' THEN 1 ELSE 0 END), 0) AS major_accidents,
+    ROUND(AVG(risk_score), 3) AS avg_risk_score
+FROM accidents_india
+WHERE {where_sql};
+"""
+df_kpi = execute_query(kpi_sql, params)
+
+if not df_kpi.empty:
+    k = df_kpi.iloc[0]
+    total_acc = int(k["total_accidents"])
+    total_cas = int(k["total_casualties"])
+    fatal_acc = int(k["fatal_accidents"])
+    fatal_rate = round((fatal_acc / total_acc * 100), 2) if total_acc > 0 else 0.0
+    risk_score = float(k["avg_risk_score"]) if pd.notna(k["avg_risk_score"]) else 0.0
+
+    kpis = [
+        ("🚗", "Total Incidents", total_acc),
+        ("🩹", "Total Casualties", total_cas),
+        ("⚠️", "Fatal Incidents", fatal_acc),
+        ("🚨", "Fatal Crash Rate", f"{fatal_rate}%"),
+        ("⚡", "Mean Risk Index", f"{risk_score:.3f}"),
+    ]
+    render_kpi_row(kpis)
 
 st.markdown("<br>", unsafe_allow_html=True)
 
-# ── Column Value Previews ────────────────────────────────────────────────────
-section_header("Column Summaries", "📋")
 
-col1, col2 = st.columns(2)
+# ── 2. Temporal Trends & Severity Breakdown ──────────────────────────────────
+col_trend, col_sev = st.columns([3, 2])
 
-with col1:
-    st.markdown("**Numeric Column Statistics**")
-    st.dataframe(df.describe().T.style.format("{:.1f}"), use_container_width=True)
-
-with col2:
-    st.markdown("**Categorical Column Unique Counts**")
-    cat_cols = df.select_dtypes(include="object").columns
-    if len(cat_cols) > 0:
-        cat_info = pd.DataFrame({
-            "Column": cat_cols,
-            "Unique Values": [df[c].nunique() for c in cat_cols],
-            "Missing": [df[c].isna().sum() for c in cat_cols],
-            "Sample Value": [df[c].dropna().iloc[0] if df[c].notna().any() else "N/A" for c in cat_cols],
-        })
-        st.dataframe(cat_info, use_container_width=True, hide_index=True)
+with col_trend:
+    section_header("Monthly Accident & Casualty Trajectory", "📈")
+    trend_sql = f"""
+    SELECT 
+        printf('%04d-%02d', year, month) AS timeline,
+        COUNT(*) AS incidents,
+        SUM(casualties) AS casualties
+    FROM accidents_india
+    WHERE {where_sql}
+    GROUP BY year, month
+    ORDER BY year ASC, month ASC;
+    """
+    df_trend = execute_query(trend_sql, params)
+    
+    if not df_trend.empty:
+        fig_trend = go.Figure()
+        fig_trend.add_trace(go.Scatter(
+            x=df_trend["timeline"],
+            y=df_trend["incidents"],
+            name="Accidents",
+            line=dict(color="#FF4B4B", width=3),
+            mode="lines+markers",
+        ))
+        fig_trend.add_trace(go.Scatter(
+            x=df_trend["timeline"],
+            y=df_trend["casualties"],
+            name="Casualties",
+            line=dict(color="#FF8C42", width=2, dash="dash"),
+            mode="lines",
+        ))
+        fig_trend.update_layout(
+            template="plotly_dark",
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(0,0,0,0)",
+            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+            margin=dict(l=20, r=20, t=30, b=20),
+            font=dict(family="Inter"),
+        )
+        st.plotly_chart(fig_trend, use_container_width=True)
     else:
-        st.info("No categorical columns detected.")
+        st.info("No records matching the selected filter criteria.")
 
-# ── Missing Values ───────────────────────────────────────────────────────────
-section_header("Missing Values Overview", "🔍")
+with col_sev:
+    section_header("Severity Share", "🎯")
+    sev_sql = f"""
+    SELECT 
+        accident_severity,
+        COUNT(*) AS count
+    FROM accidents_india
+    WHERE {where_sql}
+    GROUP BY accident_severity;
+    """
+    df_sev = execute_query(sev_sql, params)
+    if not df_sev.empty:
+        fig_sev = px.pie(
+            df_sev,
+            names="accident_severity",
+            values="count",
+            hole=0.55,
+            color="accident_severity",
+            color_discrete_map={
+                "minor": "#00D4AA",
+                "major": "#FFD600",
+                "fatal": "#FF4B4B",
+            },
+        )
+        fig_sev.update_layout(
+            template="plotly_dark",
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(0,0,0,0)",
+            margin=dict(l=10, r=10, t=20, b=10),
+            font=dict(family="Inter"),
+        )
+        st.plotly_chart(fig_sev, use_container_width=True)
 
-missing = df.isnull().sum()
-missing_pct = (missing / len(df) * 100).round(2)
-missing_df = pd.DataFrame({"Column": missing.index, "Missing": missing.values, "Pct (%)": missing_pct.values})
-missing_df = missing_df[missing_df["Missing"] > 0].sort_values("Missing", ascending=False)
 
-if missing_df.empty:
-    st.success("✅ No missing values in the dataset!")
-else:
-    fig = px.bar(
-        missing_df,
-        x="Column", y="Pct (%)",
-        title="Missing Values by Column",
-        color="Pct (%)",
-        color_continuous_scale=["#00D4AA", "#FFD600", "#FF4B4B"],
+# ── 3. City Breakdown & Weather Impact ───────────────────────────────────────
+col_city, col_cause = st.columns(2)
+
+with col_city:
+    section_header("Incident Density Across Cities", "🏙️")
+    city_sql = f"""
+    SELECT 
+        city,
+        COUNT(*) AS incidents,
+        SUM(CASE WHEN accident_severity = 'fatal' THEN 1 ELSE 0 END) AS fatal_count
+    FROM accidents_india
+    WHERE {where_sql}
+    GROUP BY city
+    ORDER BY incidents ASC;
+    """
+    df_city = execute_query(city_sql, params)
+    if not df_city.empty:
+        fig_city = px.bar(
+            df_city,
+            x="incidents",
+            y="city",
+            orientation="h",
+            color="fatal_count",
+            color_continuous_scale=["#00D4AA", "#FF8C42", "#FF4B4B"],
+            labels={"incidents": "Incident Count", "city": "City", "fatal_count": "Fatal Count"},
+        )
+        fig_city.update_layout(
+            template="plotly_dark",
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(0,0,0,0)",
+            margin=dict(l=20, r=20, t=20, b=20),
+            font=dict(family="Inter"),
+        )
+        st.plotly_chart(fig_city, use_container_width=True)
+
+with col_cause:
+    section_header("Reported Primary Causes", "⚠️")
+    cause_sql = f"""
+    SELECT 
+        cause,
+        COUNT(*) AS count
+    FROM accidents_india
+    WHERE {where_sql}
+    GROUP BY cause
+    ORDER BY count DESC;
+    """
+    df_cause = execute_query(cause_sql, params)
+    if not df_cause.empty:
+        fig_cause = px.bar(
+            df_cause,
+            x="cause",
+            y="count",
+            color="cause",
+            color_discrete_sequence=["#FF4B4B", "#FF8C42", "#FFD600", "#4DA8FF", "#A855F7"],
+            labels={"cause": "Cause", "count": "Incident Count"},
+        )
+        fig_cause.update_layout(
+            template="plotly_dark",
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(0,0,0,0)",
+            showlegend=False,
+            margin=dict(l=20, r=20, t=20, b=20),
+            font=dict(family="Inter"),
+        )
+        st.plotly_chart(fig_cause, use_container_width=True)
+
+
+# ── 4. Filtered Data Download ────────────────────────────────────────────────
+st.markdown("<br>", unsafe_allow_html=True)
+section_header("Download Filtered Records", "📥")
+
+download_sql = f"""
+SELECT 
+    accident_id, city, state, latitude, longitude, accident_date,
+    road_type, weather, visibility, cause, accident_severity,
+    vehicles_involved, casualties, risk_score
+FROM accidents_india
+WHERE {where_sql}
+LIMIT 5000;
+"""
+df_filtered_export = execute_query(download_sql, params)
+
+col1, col2 = st.columns([2, 3])
+with col1:
+    st.write(f"Filtered subset contains **{len(df_filtered_export):,}** rows (capped at 5,000 for export).")
+with col2:
+    csv_bytes = df_filtered_export.to_csv(index=False).encode("utf-8")
+    st.download_button(
+        label="📥 Download Filtered Data (CSV)",
+        data=csv_bytes,
+        file_name="roadrisk_filtered_analytics.csv",
+        mime="text/csv",
     )
-    fig.update_layout(
-        template="plotly_dark",
-        paper_bgcolor="rgba(0,0,0,0)",
-        plot_bgcolor="rgba(0,0,0,0)",
-        font=dict(family="Inter"),
-    )
-    st.plotly_chart(fig, use_container_width=True)
 
-# ── Note ─────────────────────────────────────────────────────────────────────
+st.markdown("<br>", unsafe_allow_html=True)
 info_card(
-    "📌 <strong>Note:</strong> This is the Phase 1 skeleton dashboard. "
-    "Full analytics (trends, severity breakdowns, filters, and geographic views) "
-    "will be added in Phase 3–4 after data cleaning and schema validation."
+    "📌 <strong>Analytical Guidance:</strong> Observed accident frequencies reflect recorded incidents. "
+    "To establish genuine risk indices, localized road exposure metrics (Average Annual Daily Traffic) "
+    "are required alongside historical incidents."
 )
