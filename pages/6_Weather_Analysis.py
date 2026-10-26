@@ -28,6 +28,9 @@ from src.utils import (
     info_card,
     status_badge,
     export_dataframe_ui,
+    empty_state,
+    error_state,
+    service_status_row,
 )
 from src.database import get_database_connection
 from src.weather_client import (
@@ -35,6 +38,7 @@ from src.weather_client import (
     get_incident_weather_match,
     compute_weather_risk_metrics,
     init_weather_cache,
+    weather_service_status,
 )
 
 # ── Streamlit Page Configuration ─────────────────────────────────────────────
@@ -61,6 +65,9 @@ st.markdown("""
     </p>
 </div>
 """, unsafe_allow_html=True)
+
+# ── Weather Integration Status (secret-free) ─────────────────────────────────
+service_status_row([weather_service_status(probe=False)])
 
 # ── Load Accident Data ───────────────────────────────────────────────────────
 @st.cache_data(ttl=600, show_spinner=False)
@@ -89,7 +96,12 @@ def load_accident_weather_data() -> pd.DataFrame:
 df_accidents = load_accident_weather_data()
 
 if df_accidents.empty:
-    st.error("⚠️ Accident dataset could not be loaded from database or processed files.")
+    error_state(
+        "Accident dataset unavailable",
+        "The accident dataset could not be loaded from the SQLite database or the processed CSV files.",
+        hint="Rebuild the database from the Home page, or run the preprocessing pipeline to regenerate the cleaned CSVs.",
+        icon="🌦️",
+    )
     st.stop()
 
 # ── Compute Core Weather Metrics ─────────────────────────────────────────────
@@ -394,6 +406,13 @@ with tabs[1]:
             valid_cols = [c for c in display_cols if c in df_weather_day.columns]
             st.dataframe(df_weather_day[valid_cols], use_container_width=True)
             export_dataframe_ui(df_weather_day[valid_cols], f"weather_{chosen_preset}_{date_str}")
+    else:
+        empty_state(
+            "No atmospheric data returned",
+            f"Open-Meteo returned no hourly observations for {chosen_preset} on {date_str}.",
+            hint="Check the selected date is within the supported historical range, then retry the query.",
+            icon="🌤️",
+        )
 
 # ══════════════════════════════════════════════════════════════════════════════
 # TAB 3: Incident Atmospheric Re-enrichment
@@ -472,7 +491,12 @@ with tabs[2]:
             </div>
             """, unsafe_allow_html=True)
         else:
-            st.warning("Historical meteorological record could not be matched.")
+            error_state(
+                "No historical weather match",
+                "No archived Open-Meteo reanalysis record could be aligned to this incident's location and time.",
+                hint="The historical archive may not cover this date, or the service may be temporarily unreachable. The rest of the page is unaffected.",
+                icon="🌐",
+            )
 
 # ══════════════════════════════════════════════════════════════════════════════
 # TAB 4: Scientific Governance & Confounding Variables

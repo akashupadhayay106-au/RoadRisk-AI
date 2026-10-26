@@ -18,6 +18,7 @@ from src.utils import (
     section_header,
     render_kpi_row,
     info_card,
+    empty_state,
 )
 from src.database import execute_query, DATABASE_PATH, load_data_to_database
 from src.sql_queries import (
@@ -198,7 +199,12 @@ with tab_temporal:
             )
             st.plotly_chart(fig_trend, use_container_width=True)
         else:
-            st.info("No matching incident records found.")
+            empty_state(
+                "No matching incident records",
+                "No incidents matched the current filter combination, so no monthly trajectory can be plotted.",
+                hint="Try widening the City, State, Year, Severity, Weather or Road filters in the sidebar.",
+                icon="📅",
+            )
 
     with col2:
         section_header("Severity Proportion", "🎯")

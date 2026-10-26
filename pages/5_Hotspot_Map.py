@@ -17,6 +17,9 @@ from src.utils import (
     section_header,
     render_kpi_row,
     info_card,
+    empty_state,
+    error_state,
+    service_status_row,
 )
 from src.database import execute_query, DATABASE_PATH, load_data_to_database
 from src.hotspot_analysis import (
@@ -152,7 +155,12 @@ with tab_india:
             mime="text/csv",
         )
     else:
-        st.info("No dense clusters detected with current parameter thresholds. Try increasing the radius (Eps) or lowering Min Incidents.")
+        empty_state(
+            "No dense clusters detected",
+            "The current DBSCAN parameters did not find any cluster meeting the minimum incident threshold.",
+            hint="Try increasing the neighborhood radius (Eps) or lowering the minimum incidents required for a hotspot.",
+            icon="🔥",
+        )
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -217,12 +225,11 @@ with tab_route:
     )
 
     r_status = routing_service_status(probe=False)
-    if r_status["configured"]:
-        st.success(f"🟢 {r_status['label']} is configured — live routing enabled.")
-    else:
-        st.info(
-            f"🔵 {r_status['label']} is not configured. Set `OPENROUTESERVICE_API_KEY` "
-            "(locally in `.env`, or in Streamlit secrets when deployed) to enable live routing."
+    service_status_row([r_status])
+    if not r_status["configured"]:
+        st.caption(
+            "Set `OPENROUTESERVICE_API_KEY` (locally in `.env`, or in Streamlit secrets when "
+            "deployed) to enable live routing. Offline hotspot analytics work regardless."
         )
 
     city_coords_df = execute_query(
@@ -239,7 +246,12 @@ with tab_route:
     )
 
     if city_coords_df.empty:
-        st.warning("No city coordinates found in the database — routing cannot be demonstrated.")
+        error_state(
+            "No city coordinates available",
+            "The database returned no city coordinates, so origin/destination routing cannot be demonstrated.",
+            hint="Rebuild the database from the Home page so city geolocations are available.",
+            icon="🧭",
+        )
     else:
         city_options = city_coords_df["city"].tolist()
         coord_lookup = {
@@ -317,9 +329,11 @@ with tab_route:
                         "(HeiGIT). No traffic, weather or toll adjustments are applied."
                     )
                 else:
-                    st.warning(
-                        "Routing is unavailable right now — the service may be unconfigured, "
-                        "rate-limited, or temporarily unreachable. Offline hotspot analytics are unaffected."
+                    error_state(
+                        "Routing currently unavailable",
+                        "The routing service did not return a route — it may be unconfigured, rate-limited, or temporarily unreachable.",
+                        hint="Offline DBSCAN hotspot analytics on the other tabs are unaffected and remain fully functional.",
+                        icon="🛣️",
                     )
 
     st.markdown(

@@ -18,7 +18,7 @@ import streamlit as st
 import plotly.express as px
 
 from src.config import PAGE_CONFIG
-from src.utils import inject_custom_css, setup_sidebar, section_header, metric_card, info_card
+from src.utils import inject_custom_css, setup_sidebar, section_header, metric_card, info_card, error_state
 from src.explainability import (
     get_global_feature_importance,
     explain_single_prediction,
@@ -69,7 +69,12 @@ try:
     artifact = load_severity_artifact()
     df_imp = get_global_feature_importance(artifact)
 except Exception as e:
-    st.error(f"Could not load severity model: {e}")
+    error_state(
+        "Severity model unavailable",
+        f"The model artifact or feature importances could not be loaded ({type(e).__name__}).",
+        hint="Train the severity model first so `severity_pipeline.joblib` and the comparison metrics exist, then reload.",
+        icon="🧯",
+    )
     st.stop()
 
 # ── KPI Ribbon ────────────────────────────────────────────────────────────────

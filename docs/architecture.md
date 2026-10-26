@@ -74,3 +74,5 @@ flowchart TD
 
 ### 4. Interactive Presentation Tier
 - 10 structured Streamlit pages built using an ergonomic dark design system (`Inter` typography, glassmorphic metric cards, responsive Plotly charts, and interactive Mapbox geospatial maps).
+- A single shared component library in `src/utils.py` keeps every page visually consistent: KPI cards with accessible tooltips, reusable empty/error state blocks (`empty_state`, `error_state`), and secret-free API/service status pills (`service_status_row`) that reveal only whether a service is *configured* and *available* — never its key.
+- Accessibility and mobile behaviour are handled globally via CSS: visible keyboard `:focus-visible` outlines, a `@media (max-width: 768px)` responsive block for KPI/section scaling, and a `prefers-reduced-motion` block that disables card transitions. Optional integrations (LLM providers, routing, weather) degrade to offline analytics with an explicit status indicator instead of failing the page.

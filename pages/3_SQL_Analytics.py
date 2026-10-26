@@ -17,6 +17,8 @@ from src.utils import (
     setup_sidebar,
     section_header,
     info_card,
+    empty_state,
+    error_state,
 )
 from src.database import (
     execute_query,
@@ -104,7 +106,12 @@ with tab_predefined:
         latency_ms = round((time.time() - t0) * 1000, 2)
         st.caption(f"⚡ Executed in **{latency_ms} ms** | Returned **{len(df_result)}** rows")
     except Exception as e:
-        st.error(f"Error executing query: {e}")
+        error_state(
+            "Query execution failed",
+            f"The predefined analysis could not run ({type(e).__name__}).",
+            hint="Verify the database file exists and the schema matches the expected columns.",
+            icon="🗄️",
+        )
         df_result = pd.DataFrame()
 
     if not df_result.empty:
@@ -173,6 +180,13 @@ with tab_predefined:
             file_name=f"sql_analysis_{selected_q[:2].strip()}.csv",
             mime="text/csv",
         )
+    else:
+        empty_state(
+            "Query returned no rows",
+            "The selected analysis produced an empty result set for the current database contents.",
+            hint="Choose a different analytical question, or run the custom SQL console to investigate.",
+            icon="🔎",
+        )
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -228,7 +242,12 @@ LIMIT 20;"""
                 mime="text/csv",
             )
         except Exception as e:
-            st.error(f"Execution Error: {e}")
+            error_state(
+                "Execution error",
+                f"Your SQL statement could not be executed ({type(e).__name__}).",
+                hint="Only read-only SELECT statements against existing tables are permitted. Check table and column names.",
+                icon="💻",
+            )
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -252,4 +271,9 @@ with tab_schema:
         df_idx = pd.DataFrame(db_summary["indexes"])
         st.dataframe(df_idx, use_container_width=True, hide_index=True)
     else:
-        st.info("No custom indexes created.")
+        empty_state(
+            "No custom indexes",
+            "The database currently has no user-defined B-tree indexes beyond implicit primary keys.",
+            hint="Indexes are created automatically during database load when the configured list is non-empty.",
+            icon="🗄️",
+        )

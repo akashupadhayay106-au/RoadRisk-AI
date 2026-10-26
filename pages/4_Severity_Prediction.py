@@ -16,6 +16,7 @@ from src.utils import (
     inject_custom_css,
     setup_sidebar,
     section_header,
+    error_state,
 )
 from src.features import get_time_of_day
 from src.evaluate_model import plot_confusion_matrix_plotly
@@ -49,7 +50,12 @@ try:
     with open(metrics_path, "r", encoding="utf-8") as f:
         metrics_meta = json.load(f)
 except Exception as e:
-    st.error(f"Error loading model artifacts: {e}")
+    error_state(
+        "Model artifacts unavailable",
+        f"The severity model could not be loaded ({type(e).__name__}).",
+        hint="Run the training pipeline to regenerate `severity_pipeline.joblib` and `severity_model_comparison.json`, then reload.",
+        icon="🧯",
+    )
     st.stop()
 
 # ── Tabs ─────────────────────────────────────────────────────────────────────

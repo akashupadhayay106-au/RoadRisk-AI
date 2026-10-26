@@ -31,6 +31,8 @@ from src.utils import (
     section_header,
     metric_card,
     info_card,
+    empty_state,
+    error_state,
 )
 from src.cctv_preprocessing import (
     scan_cctv_manifest,
@@ -282,7 +284,12 @@ with tabs[0]:
 
             st.write(f"**Prediction:** `{pred_res['prediction']}` | **Confidence:** `{conf*100:.1f}%` | **Latency:** `{latency} ms`")
         else:
-            st.info("👈 Please upload a JPG or PNG frame to analyze.")
+            empty_state(
+                "No frame uploaded yet",
+                "Upload a JPG or PNG traffic-surveillance frame to run neural inference and Grad-CAM.",
+                hint="Use the Curated Gallery tab to evaluate bundled benchmark frames instead.",
+                icon="🖼️",
+            )
 
     else:
         # Video Upload & Frame Sampling Mode
@@ -312,7 +319,12 @@ with tabs[0]:
                             max_frames=max_sampled,
                         )
                     except Exception as e:
-                        st.error(f"Error reading video stream: {e}")
+                        error_state(
+                            "Could not read video stream",
+                            f"Frame extraction failed ({type(e).__name__}).",
+                            hint="Confirm the file is a valid MP4/AVI/MOV clip and that OpenCV can decode its codec.",
+                            icon="🎬",
+                        )
                         frames_data = []
 
                 if frames_data:
@@ -368,11 +380,26 @@ with tabs[0]:
                                 st.image(row["image"], use_container_width=True)
                                 st.caption(f"T={row['timestamp_sec']}s • Accident Prob: {row['prob_accident']*100:.1f}%")
                     else:
-                        st.info("✅ All sampled video frames remained below the incident threshold.")
+                        empty_state(
+                            "No incident frames flagged",
+                            "Every sampled frame stayed below the 0.50 accident-probability threshold.",
+                            hint="Try a clip that contains an actual collision, or lower the sampling stride to inspect more frames.",
+                            icon="✅",
+                        )
                 else:
-                    st.warning("No frames could be extracted from the provided video file.")
+                    error_state(
+                        "No frames extracted",
+                        "No frames could be sampled from the provided video file.",
+                        hint="The clip may be empty, corrupted, or use an unsupported codec.",
+                        icon="🎬",
+                    )
         else:
-            st.info("👈 Upload a CCTV video clip (e.g., MP4) or use the Curated Gallery tab to evaluate benchmark frames.")
+            empty_state(
+                "No video uploaded yet",
+                "Upload an MP4, AVI, or MOV surveillance clip to run batch frame inference.",
+                hint="Or switch to the Curated Gallery tab to evaluate bundled benchmark frames.",
+                icon="📹",
+            )
 
 # ══════════════════════════════════════════════════════════════════════════════
 # TAB 2: Video Sequence Leakage Audit

@@ -15,6 +15,8 @@ from src.utils import (
     section_header,
     render_kpi_row,
     load_csv_cached,
+    empty_state,
+    error_state,
 )
 from src.database import execute_query, DATABASE_PATH, load_data_to_database
 
@@ -66,7 +68,12 @@ else:
     df_raw = load_csv_cached(str(csv_path))
 
 if df_raw is None or df_raw.empty:
-    st.warning("Selected dataset could not be loaded. Please ensure preprocessing has run.")
+    error_state(
+        "Dataset could not be loaded",
+        f"The `{selected_dataset_key}` dataset is empty or unavailable.",
+        hint="Run the preprocessing pipeline to generate the processed CSVs, or rebuild the SQLite database from the Home page.",
+        icon="📂",
+    )
     st.stop()
 
 
@@ -213,9 +220,19 @@ with tab_dossier:
                 st.write(f"**Reported Cause:** {rec.get('cause')}")
                 st.write(f"**Risk Score Index:** `{rec.get('risk_score')}`")
         else:
-            st.info("No records in current filter selection.")
+            empty_state(
+                "No records in the current selection",
+                "The active filter combination returned zero incidents, so no dossier can be shown.",
+                hint="Clear the City, Severity, Weather or Road filters — or reset the keyword search.",
+                icon="📋",
+            )
     else:
-        st.info("Dossier inspector is currently configured for the primary Indian Road Accidents dataset.")
+        empty_state(
+            "Dossier inspector is dataset-specific",
+            "The single-incident dossier is configured for the primary Indian Road Accidents dataset.",
+            hint="Switch the source dataset back to 'Indian Road Accidents' to inspect individual records.",
+            icon="📋",
+        )
 
 
 # ═══════════════════════════════════════════════════════════════════════════════

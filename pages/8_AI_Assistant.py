@@ -18,7 +18,7 @@ if str(PROJECT_ROOT) not in sys.path:
 import streamlit as st
 
 from src.config import PAGE_CONFIG
-from src.utils import inject_custom_css, setup_sidebar
+from src.utils import inject_custom_css, setup_sidebar, service_status_row
 from src.ai_assistant import ask_roadrisk_assistant, get_provider_status
 
 # ── Streamlit Page Setup ───────────────────────────────────────────────────────
@@ -48,34 +48,6 @@ st.markdown("""
 provider_rows = get_provider_status()
 live_row = next((p for p in provider_rows if p["kind"] == "llm" and p["configured"]), None)
 
-_PILL_PALETTE = {
-    "ok": ("rgba(0,200,83,0.15)", "rgba(0,200,83,0.45)", "#00C853"),
-    "idle": ("rgba(77,168,255,0.12)", "rgba(77,168,255,0.4)", "#4DA8FF"),
-    "off": ("rgba(136,153,166,0.12)", "rgba(136,153,166,0.35)", "#8899A6"),
-}
-_PILL_DOT = {"ok": "🟢", "idle": "🔵", "off": "⚪"}
-
-
-def _pill(label: str, state: str) -> str:
-    """Render a small status chip. Shows only configuration state, never keys."""
-    bg, border, fg = _PILL_PALETTE[state]
-    return (
-        f"<span style=\"display:inline-block;padding:2px 10px;border-radius:999px;"
-        f"font-size:0.72rem;font-weight:600;margin:0 6px 6px 0;"
-        f"border:1px solid {border};background:{bg};color:{fg};\">"
-        f"{_PILL_DOT[state]} {label}</span>"
-    )
-
-
-def _pill_state(row: dict) -> str:
-    if row["name"] == "offline":
-        return "idle"
-    if not row["configured"]:
-        return "off"
-    if row["available"] is False:
-        return "off"
-    return "ok"
-
 
 col_s1, col_s2 = st.columns([3, 1])
 with col_s1:
@@ -100,19 +72,12 @@ with col_s1:
             unsafe_allow_html=True,
         )
 
-    pills = "".join(
-        _pill(
-            f"{row['label']} — {'configured' if row['configured'] else 'not configured'}",
-            _pill_state(row),
-        )
-        for row in provider_rows
-    )
     st.markdown(
-        "<div style='margin-bottom:0.8rem;'>"
-        "<span style='font-size:0.72rem;color:#8899A6;font-weight:600;'>PROVIDER STATUS (keys are never displayed):</span><br>"
-        f"{pills}</div>",
+        "<div style='font-size:0.72rem;color:#8899A6;font-weight:600;margin-bottom:0.2rem;'>"
+        "PROVIDER STATUS (keys are never displayed):</div>",
         unsafe_allow_html=True,
     )
+    service_status_row(provider_rows)
 
 with col_s2:
     if st.button("🧹 Clear Chat History", use_container_width=True):
