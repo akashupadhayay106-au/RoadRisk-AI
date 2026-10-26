@@ -170,6 +170,22 @@ def load_data_to_database(db_path: Path | str | None = None) -> Dict[str, int]:
     # 1. Load Cleaned Indian Roads Dataset
     cleaned_csv = PROCESSED_DIR / "indian_roads_cleaned.csv"
     if not cleaned_csv.exists():
+        # On a fresh clone / public deployment the source datasets are intentionally
+        # not shipped (their licences do not permit redistribution). Degrade to an
+        # empty-but-valid schema so every page renders a clear empty state instead
+        # of crashing. Obtain the dataset from its documented source for full analytics.
+        from src.config import INDIAN_ACCIDENTS_FILE
+
+        if not INDIAN_ACCIDENTS_FILE.exists():
+            logger.warning(
+                "Source dataset %s is unavailable; database will remain empty. "
+                "The application runs in empty/demo mode until the dataset is provided.",
+                INDIAN_ACCIDENTS_FILE,
+            )
+            conn.commit()
+            conn.close()
+            return counts
+
         from src.data_cleaning import clean_indian_roads_dataset
         df_ind, _ = clean_indian_roads_dataset()
     else:

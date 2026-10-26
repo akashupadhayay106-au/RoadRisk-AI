@@ -18,7 +18,7 @@ from src.utils import (
     section_header,
     error_state,
 )
-from src.features import get_time_of_day
+from src.data_cleaning import get_time_of_day
 from src.evaluate_model import plot_confusion_matrix_plotly
 
 st.set_page_config(**PAGE_CONFIG)

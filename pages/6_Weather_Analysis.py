@@ -32,7 +32,7 @@ from src.utils import (
     error_state,
     service_status_row,
 )
-from src.database import get_database_connection
+from src.database import get_db_connection
 from src.weather_client import (
     fetch_historical_weather,
     get_incident_weather_match,
@@ -74,7 +74,7 @@ service_status_row([weather_service_status(probe=False)])
 def load_accident_weather_data() -> pd.DataFrame:
     """Load cleaned Indian accident data with weather and severity attributes."""
     try:
-        conn = get_database_connection(DATABASE_PATH)
+        conn = get_db_connection(DATABASE_PATH)
         query = """
         SELECT
             accident_id, city, state, latitude, longitude,

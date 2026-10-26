@@ -145,12 +145,16 @@ def audit_split_leakage(manifest_df: Optional[pd.DataFrame] = None) -> Dict[str,
         manifest_df = scan_cctv_manifest(verify_images=False)
 
     if manifest_df.empty:
+        # Same shape as the populated result so callers can index every key
+        # without special-casing a dataset that simply is not present locally.
         return {
             "status": "empty",
             "total_frames": 0,
             "total_groups": 0,
             "leaking_groups_count": 0,
+            "leaking_frames_count": 0,
             "leakage_percentage": 0.0,
+            "class_breakdown": {},
         }
 
     # Group by (class_name, video_group) and collect set of splits

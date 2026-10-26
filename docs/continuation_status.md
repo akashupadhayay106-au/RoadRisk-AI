@@ -44,7 +44,8 @@
 
 ## 3. Deployment & Git Status
 - **Local Working Tree**: Cleanly tracked and committed with descriptive commit messages.
-- **Git Remote**: Not configured (no remote URL or GitHub username provided).
-- **GitHub Push**: Blocked pending user account authentication.
-- **Live Cloud URL**: Not attempted (pending repository creation and user credentials).
-- **Next User Action**: Follow `docs/deployment_checklist.md` to link GitHub remote and deploy on Streamlit Community Cloud.
+- **Git Remote**: Configured — `https://github.com/akashupadhayay106-au/RoadRisk-AI.git`.
+- **History**: Pre-existing remote history reconciled via `git merge origin/main --allow-unrelated-histories` (merge commit `1266026`); no force-push, no rewrite, original `LICENSE` attribution preserved.
+- **GitHub Push**: Requires this machine to be authenticated with the owner's GitHub account.
+- **Live Cloud URL**: Not attempted (pending an authenticated push and the Streamlit Cloud deploy).
+- **Next User Action**: Follow `docs/deployment_checklist.md` to push and deploy on Streamlit Community Cloud.

@@ -146,20 +146,38 @@ tabs = st.tabs([
 with tabs[0]:
     section_header("CCTV Incident Classifier & Attention Map", "📹")
 
+    # Curated gallery frames only exist when the (licence-restricted) CCTV dataset
+    # is present locally. On a data-less clone the gallery mode is hidden so the page
+    # degrades to the two upload workflows instead of failing on an empty selectbox.
+    gallery_acc = sorted(list((CCTV_TEST_DIR / "Accident").glob("*.*")))[:6]
+    gallery_non = sorted(list((CCTV_TEST_DIR / "Non Accident").glob("*.*")))[:6]
+    gallery_available = bool(gallery_acc or gallery_non)
+
+    input_modes = [
+        "Curated CCTV Test Gallery",
+        "Upload Custom Image Frame (JPG/PNG)",
+        "Upload Video Stream & Sample Frames (MP4/AVI/MOV)",
+    ]
+    if not gallery_available:
+        input_modes = input_modes[1:]
+        empty_state(
+            "Curated CCTV test gallery not available",
+            "No bundled benchmark frames were found under `data/test/` on this deployment.",
+            hint="Use one of the upload workflows below to classify your own frame or video. "
+                 "Add the CCTV test dataset to data/test/ to enable the curated gallery.",
+            icon="📹",
+        )
+
     # Selection mode
     input_mode = st.radio(
         "Choose Surveillance Feed Source:",
-        [
-            "Curated CCTV Test Gallery",
-            "Upload Custom Image Frame (JPG/PNG)",
-            "Upload Video Stream & Sample Frames (MP4/AVI/MOV)",
-        ],
+        input_modes,
         horizontal=True,
     )
 
     if input_mode == "Curated CCTV Test Gallery":
-        acc_samples = sorted(list((CCTV_TEST_DIR / "Accident").glob("*.*")))[:6]
-        non_samples = sorted(list((CCTV_TEST_DIR / "Non Accident").glob("*.*")))[:6]
+        acc_samples = gallery_acc
+        non_samples = gallery_non
 
         sample_options = {}
         for i, p in enumerate(acc_samples):

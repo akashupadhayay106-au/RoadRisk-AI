@@ -121,6 +121,33 @@ def inject_custom_css() -> None:
         border: 1px solid rgba(255,23,68,0.3);
     }
 
+    /* ── Metric Card (compact accent KPI) ─────────────────────── */
+    .metric-card {
+        background: linear-gradient(135deg, #1A1F2C 0%, #252B3B 100%);
+        border: 1px solid rgba(255,255,255,0.06);
+        border-left: 4px solid #4DA8FF;
+        border-radius: 12px;
+        padding: 0.9rem 1rem;
+        height: 100%;
+        transition: transform 0.2s ease;
+    }
+    .metric-card:hover { transform: translateY(-2px); }
+    .metric-label {
+        font-size: 0.72rem;
+        color: #8899A6;
+        text-transform: uppercase;
+        letter-spacing: 0.07em;
+        font-weight: 600;
+    }
+    .metric-value {
+        font-size: 1.5rem;
+        font-weight: 800;
+        color: #FAFAFA;
+        margin: 0.15rem 0;
+        line-height: 1.15;
+    }
+    .metric-sub { font-size: 0.76rem; color: #8899A6; }
+
     /* ── Empty / Error / Loading States ───────────────────────── */
     .state-box {
         display: flex;
@@ -194,6 +221,8 @@ def inject_custom_css() -> None:
         .state-box { padding: 1.35rem 1rem; }
         .state-msg { font-size: 0.83rem; }
         .info-card { padding: 0.85rem 0.95rem; font-size: 0.9rem; }
+        .metric-card { padding: 0.75rem 0.85rem; }
+        .metric-value { font-size: 1.25rem; }
         .sidebar-title { font-size: 1.2rem; }
     }
 
@@ -238,6 +267,52 @@ def render_kpi_row(kpis: list[tuple[str, str, str | int | float]]) -> None:
     for col, (icon, label, value) in zip(cols, kpis):
         with col:
             st.markdown(kpi_card(icon, label, value), unsafe_allow_html=True)
+
+
+def metric_card(
+    label: str,
+    value: str | int | float,
+    sublabel: str = "",
+    border_color: str = "#4DA8FF",
+) -> None:
+    """
+    Render a compact metric card with a coloured left accent border.
+
+    Used by the weather, CCTV and explainability pages for their KPI ribbons.
+    ``border_color`` is applied inline so callers can convey semantic meaning
+    (e.g. red for an elevated adverse-weather severe rate).
+    """
+    sub_html = f'<div class="metric-sub">{sublabel}</div>' if sublabel else ""
+    st.markdown(
+        f'<div class="metric-card" style="border-left-color: {border_color};">'
+        f'<div class="metric-label">{label}</div>'
+        f'<div class="metric-value">{value}</div>'
+        f"{sub_html}"
+        f"</div>",
+        unsafe_allow_html=True,
+    )
+
+
+def export_dataframe_ui(
+    df: pd.DataFrame,
+    filename_stem: str = "roadrisk_export",
+    label: str = "⬇️ Export table as CSV",
+) -> None:
+    """
+    Render a CSV download button for a DataFrame.
+
+    Kept as a small shared helper so every data table in the app offers the same
+    export affordance and consistent file naming.
+    """
+    if df is None or df.empty:
+        return
+    st.download_button(
+        label=label,
+        data=df.to_csv(index=False).encode("utf-8"),
+        file_name=f"{filename_stem}.csv",
+        mime="text/csv",
+        use_container_width=False,
+    )
 
 
 # ── Empty / Error / Loading States ───────────────────────────────────────────

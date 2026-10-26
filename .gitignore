@@ -54,6 +54,11 @@ models/*.pt
 models/*.pth
 models/*.h5
 
+# Required runtime artifacts are shipped with the app (loaded by pages 4 and 7);
+# everything else stays local to keep the repository lean.
+!models/severity_pipeline.joblib
+!models/cctv_mobilenet_v2.pth
+
 # ---------- Database ----------
 *.db
 *.sqlite

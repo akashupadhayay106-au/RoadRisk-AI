@@ -7,7 +7,6 @@ Verifies the archive contents and file size upon completion.
 """
 
 import os
-import sys
 import zipfile
 from pathlib import Path
 

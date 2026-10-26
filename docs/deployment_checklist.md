@@ -8,37 +8,35 @@ Before pushing to any public git forge (GitHub, GitLab), verify that no credenti
 - [x] **Streamlit Secrets Ignored**: `.streamlit/secrets.toml` is excluded by `.gitignore`.
 - [x] **Local Databases Ignored**: `*.db`, `*.sqlite` are excluded by `.gitignore`.
 - [x] **Large CCTV Datasets Ignored**: `data/train/`, `data/val/`, `data/test/` are excluded by `.gitignore`.
-- [x] **Model Weights Ignored**: `models/*.pth`, `models/*.joblib` are excluded by `.gitignore`.
+- [x] **Model Weights**: un-trained/optional weights stay local, but the two required runtime
+      artifacts are deliberately tracked so the deployed app works out of the box:
+      `models/severity_pipeline.joblib` (page 4) and `models/cctv_mobilenet_v2.pth` (page 7).
 - [x] **No Hardcoded Tokens**: Scanned all `.py` files for API key literals (zero findings).
 - [x] **Example Template Provided**: `.streamlit/secrets.toml.example` contains placeholders only (`your-gemini-api-key-here`).
 
 ---
 
-## 2. GitHub Repository Initialization & Push
+## 2. GitHub Repository & Push
 
-Because this machine is currently not authenticated with a personal GitHub account or SSH key, follow these exact terminal steps:
+The remote is already configured for this project:
 
-### Step A: Create a New GitHub Repository
-1. Log in to [GitHub](https://github.com/) in your browser.
-2. Click **New Repository**.
-3. Name it: `RoadRisk-AI`.
-4. Choose **Public** (or Private).
-5. Do **NOT** check "Initialize with README" (we already have a complete, production-grade repository).
-6. Click **Create repository**.
+```
+origin  https://github.com/akashupadhayay106-au/RoadRisk-AI.git
+```
 
-### Step B: Connect Local Git & Push
-In your PowerShell terminal in the project directory (`c:\Users\Dell\OneDrive\Desktop\MACHINE_LEARNING_PROJECTS\RoadRisk AI`), run:
+Local `main` was safely reconciled with the pre-existing remote history (which contained only a
+`LICENSE`) using `git merge origin/main --allow-unrelated-histories`; the original owner's
+copyright attribution in `LICENSE` is preserved. No force-push or history rewrite was used.
+
+To publish later changes:
 
 ```powershell
-# 1. Add your newly created remote URL (replace YOUR_USERNAME with your GitHub username)
-git remote add origin https://github.com/YOUR_USERNAME/RoadRisk-AI.git
-
-# 2. Rename branch to main if needed
-git branch -M main
-
-# 3. Push all commits to GitHub
-git push -u origin main
+git push origin main
 ```
+
+If the push is rejected for authentication, either sign in through Git Credential Manager when
+prompted in the terminal, or configure an SSH remote / a credential helper. Never paste a token
+into a chat or commit it to the repository.
 
 ---
 
@@ -50,7 +48,7 @@ Streamlit Community Cloud provides 100% free hosting for portfolio data apps wit
 1. Navigate to [share.streamlit.io](https://share.streamlit.io/) and log in with your GitHub account.
 2. Click **Create app** -> **Deploy a public app from GitHub**.
 3. Fill in the repository configuration:
-   - **Repository**: `YOUR_USERNAME/RoadRisk-AI`
+   - **Repository**: `akashupadhayay106-au/RoadRisk-AI`
    - **Branch**: `main`
    - **Main file path**: `app.py`
    - **App URL**: `roadrisk-ai.streamlit.app` (or customizable subdomain).
@@ -81,9 +79,21 @@ Streamlit Community Cloud provides 100% free hosting for portfolio data apps wit
 
 ---
 
-## 4. Current Deployment Verification Gate Status
-- **Local Working Tree**: Cleanly staged and committed.
-- **Git Remote**: Not configured (requires user's GitHub username).
-- **GitHub Push**: Blocked pending user account authentication.
-- **Live Cloud URL**: Not attempted (pending GitHub remote creation).
+## 4. Data Availability on a Public Clone
+
+The source datasets are intentionally **not** committed — their licences (Kaggle competition
+rules, UCI OGL/ODbL terms) do not permit redistribution. On a public clone / cloud deployment the
+application therefore starts in **empty/demo mode**: every page renders a clear empty state that
+names the dataset it needs and where to obtain it, instead of raising an exception. Add the
+datasets to `data/raw/` and rebuild the database from the Home page to enable full analytics.
+The two required model artifacts (see §1) *are* shipped, so the severity and CCTV pages run
+immediately.
+
+---
+
+## 5. Current Deployment Verification Gate Status
+- **Local Working Tree**: Reviewed; changes committed after passing gates.
+- **Git Remote**: Configured — `https://github.com/akashupadhayay106-au/RoadRisk-AI.git`.
+- **GitHub Push**: Requires this machine to be authenticated with the owner's GitHub account.
+- **Live Cloud URL**: Not attempted (pending an authenticated push + Streamlit Cloud deploy).
 - **Public URL Policy**: Never invented or assumed.

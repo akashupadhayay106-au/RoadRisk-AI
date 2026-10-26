@@ -15,7 +15,6 @@ from sklearn.metrics import (
     f1_score,
     confusion_matrix,
 )
-import plotly.figure_factory as ff
 import plotly.graph_objects as go
 
 
@@ -84,13 +83,20 @@ def plot_confusion_matrix_plotly(
         text = [[f"{int(val):,}" for val in row] for row in z]
         colorscale = "Reds"
 
-    fig = ff.create_annotated_heatmap(
-        z=z,
-        x=class_names,
-        y=class_names,
-        annotation_text=text,
-        colorscale=colorscale,
-        showscale=True,
+    # Built natively with go.Heatmap: `plotly.figure_factory.create_annotated_heatmap`
+    # was removed in Plotly 7.x, so the annotated heatmap is assembled by hand.
+    fig = go.Figure(
+        data=go.Heatmap(
+            z=z,
+            x=class_names,
+            y=class_names,
+            colorscale=colorscale,
+            showscale=True,
+            text=text,
+            texttemplate="%{text}",
+            textfont=dict(size=13, color="#FAFAFA"),
+            hovertemplate="True: %{y}<br>Predicted: %{x}<br>Value: %{text}<extra></extra>",
+        )
     )
 
     fig.update_layout(
