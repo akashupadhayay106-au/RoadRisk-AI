@@ -164,7 +164,7 @@ def render_home():
             font-size: 0.8rem;
             color: #556677;
             margin-top: 0.5rem;
-        ">v{APP_VERSION} • Built with Streamlit, Scikit-learn, PyTorch, Gemini AI</p>
+        ">v{APP_VERSION} • Built with Streamlit, Scikit-learn, PyTorch & a pluggable LLM provider layer</p>
     </div>
     """, unsafe_allow_html=True)
 
@@ -178,11 +178,11 @@ def render_home():
         ("🔍", "Data Explorer",       "Inspect, filter & download data",      "2_Data_Explorer",       "ready"),
         ("🗄️", "SQL Analytics",       "Query accident database with SQL",     "3_SQL_Analytics",       "ready"),
         ("🎯", "Severity Prediction", "ML classification of accident severity","4_Severity_Prediction","ready"),
-        ("🗺️", "Hotspot Map",        "Geospatial clustering & heatmaps",     "5_Hotspot_Map",         "ready"),
+        ("🗺️", "Hotspot Map",        "Geospatial clustering, heatmaps & routing","5_Hotspot_Map",      "ready"),
         ("🌦️", "Weather Analysis",   "Historical weather & accident links",  "6_Weather_Analysis",    "ready"),
         ("📹", "CCTV Detection",      "Computer vision accident detection",   "7_CCTV_Detection",      "ready"),
-        ("🤖", "AI Assistant",        "Gemini-powered road safety Q&A",       "8_AI_Assistant",        "pending"),
-        ("📈", "Explainability",      "SHAP, feature importance & monitoring","9_Model_Explainability","pending"),
+        ("🤖", "AI Assistant",        "Grounded road safety Q&A (live or offline)","8_AI_Assistant",   "ready"),
+        ("📈", "Explainability",      "SHAP, feature importance & monitoring","9_Model_Explainability","ready"),
         ("ℹ️", "About",              "Project info, sources & methodology",  "10_About",              "ready"),
     ]
 

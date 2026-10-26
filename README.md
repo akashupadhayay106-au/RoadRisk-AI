@@ -3,7 +3,7 @@
 [![Python](https://img.shields.io/badge/Python-3.12-3776AB.svg?style=flat&logo=python&logoColor=white)](https://www.python.org/)
 [![Streamlit](https://img.shields.io/badge/Streamlit-1.66+-FF4B4B.svg?style=flat&logo=streamlit&logoColor=white)](https://streamlit.io/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/pytest-139%20Passed-brightgreen.svg)](tests/)
+[![Tests](https://img.shields.io/badge/pytest-167%20Passed-brightgreen.svg)](tests/)
 
 > **RoadRisk AI** is an end-to-end, multi-source road accident intelligence platform developed as an MCA Data Science portfolio project. It integrates data engineering, relational SQLite analytics, supervised machine learning (with leakage prevention), geospatial clustering, edge computer vision with Grad-CAM, historical weather correlation, explainable AI, and a grounded GenAI conversational assistant with an offline BM25 RAG engine.
 

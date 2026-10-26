@@ -576,6 +576,59 @@ def warm_weather_cache(db_path: Path = DATABASE_PATH) -> int:
     return total_loaded
 
 
+def weather_service_status(probe: bool = False) -> Dict[str, Any]:
+    """
+    Secret-free status descriptor for the weather integration.
+
+    Open-Meteo is public and keyless, so it is always the default source and is
+    reported as configured. A probe performs a tiny reachability request.
+
+    NOTE: an unidentified third-party weather key was supplied separately, but
+    its provider (WeatherAPI.com vs OpenWeatherMap) is still unconfirmed, so no
+    key-based weather provider is wired up. The status deliberately says so
+    instead of guessing.
+    """
+    detail = (
+        "Keyless Open-Meteo historical archive is the default weather source. "
+        "No key-based weather provider is configured (the supplied weather key's "
+        "provider is still unconfirmed)."
+    )
+    available: Optional[bool] = None
+    if probe:
+        try:
+            resp = requests.get(
+                OPEN_METEO_ARCHIVE_URL,
+                params={
+                    "latitude": 19.0760,
+                    "longitude": 72.8777,
+                    "start_date": "2024-01-15",
+                    "end_date": "2024-01-15",
+                    "hourly": "temperature_2m",
+                },
+                headers={"User-Agent": "RoadRiskAI-DataSciencePortfolio/1.0"},
+                timeout=10,
+            )
+            available = resp.status_code == 200
+            detail = (
+                "Open-Meteo archive reachable."
+                if available
+                else f"Open-Meteo returned HTTP {resp.status_code}; cached/seasonal fallback is used."
+            )
+        except Exception as exc:  # noqa: BLE001
+            available = False
+            detail = f"Open-Meteo probe failed ({type(exc).__name__}); cached/seasonal fallback is used."
+
+    return {
+        "name": "open-meteo",
+        "label": "Open-Meteo (keyless)",
+        "kind": "weather",
+        "configured": True,
+        "available": available,
+        "model": None,
+        "detail": detail,
+    }
+
+
 if __name__ == "__main__":
     print("Testing Open-Meteo Historical Weather Client...")
     init_weather_cache()

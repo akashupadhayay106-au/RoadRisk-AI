@@ -43,7 +43,7 @@ _PLACEHOLDER_MARKERS = (
 )
 
 
-def _is_real_secret(value: Optional[str]) -> bool:
+def is_real_secret(value: Optional[str]) -> bool:
     """True only when *value* looks like an actual credential, not a placeholder."""
     if not value:
         return False
@@ -98,7 +98,7 @@ class LLMProvider:
         return self.default_model
 
     def is_configured(self) -> bool:
-        return _is_real_secret(self.api_key())
+        return is_real_secret(self.api_key())
 
     # -- status ---------------------------------------------------------------
 

@@ -9,6 +9,7 @@ and separate international benchmark analysis (UrbanGB Great Britain).
 import streamlit as st
 import pandas as pd
 import numpy as np
+import plotly.graph_objects as go
 from streamlit_folium import st_folium
 
 from src.config import PAGE_CONFIG, COLORS
@@ -27,6 +28,11 @@ from src.hotspot_analysis import (
     build_cluster_scatter_mapbox,
     build_density_heatmap_mapbox,
     build_folium_hotspot_map,
+)
+from src.routing_client import (
+    get_routing_client,
+    routing_service_status,
+    SUPPORTED_PROFILES,
 )
 
 st.set_page_config(**PAGE_CONFIG)
@@ -53,9 +59,10 @@ st.markdown("""
 st.divider()
 
 # ── Tabs: Indian Cities vs UrbanGB UK Benchmark vs Methodology ───────────────
-tab_india, tab_uk, tab_methodology = st.tabs([
+tab_india, tab_uk, tab_route, tab_methodology = st.tabs([
     "🇮🇳 Indian City Hotspots (DBSCAN)",
     "🇬🇧 Great Britain UrbanGB Benchmark",
+    "🧭 Route & Reachability",
     "⚖️ Count vs Risk Methodology"
 ])
 
@@ -201,7 +208,138 @@ with tab_uk:
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
-#  TAB 3: Count vs Risk Rate Methodology
+#  TAB 3: Route & Reachability (HeiGIT openrouteservice)
+# ═══════════════════════════════════════════════════════════════════════════════
+with tab_route:
+    section_header("Road-Network Routing & Reachability", "🧭")
+
+    st.caption(
+        "Live road-network distance and duration are provided by HeiGIT openrouteservice. "
+        "This is an optional integration: without a key it stays disabled and every offline "
+        "DBSCAN hotspot analysis on the other tabs continues to work normally."
+    )
+
+    r_status = routing_service_status(probe=False)
+    if r_status["configured"]:
+        st.success(f"🟢 {r_status['label']} is configured — live routing enabled.")
+    else:
+        st.info(
+            f"🔵 {r_status['label']} is not configured. Set `OPENROUTESERVICE_API_KEY` "
+            "(locally in `.env`, or in Streamlit secrets when deployed) to enable live routing."
+        )
+
+    city_coords_df = execute_query(
+        """
+        SELECT city,
+               AVG(latitude)  AS lat,
+               AVG(longitude) AS lon,
+               COUNT(*)       AS incidents
+        FROM accidents_india
+        GROUP BY city
+        HAVING incidents >= 20
+        ORDER BY incidents DESC;
+        """
+    )
+
+    if city_coords_df.empty:
+        st.warning("No city coordinates found in the database — routing cannot be demonstrated.")
+    else:
+        city_options = city_coords_df["city"].tolist()
+        coord_lookup = {
+            row["city"]: (float(row["lat"]), float(row["lon"]))
+            for _, row in city_coords_df.iterrows()
+        }
+
+        col_r1, col_r2, col_r3 = st.columns([2, 2, 1])
+        with col_r1:
+            origin_city = st.selectbox("Origin (city centroid)", city_options, index=0, key="route_origin")
+        with col_r2:
+            dest_city = st.selectbox(
+                "Destination (city centroid)",
+                city_options,
+                index=min(1, len(city_options) - 1),
+                key="route_dest",
+            )
+        with col_r3:
+            route_profile = st.selectbox("Profile", SUPPORTED_PROFILES, index=0, key="route_profile")
+
+        if st.button("🧭 Compute live route", use_container_width=True, key="compute_route"):
+            if origin_city == dest_city:
+                st.warning("Choose two different cities to compute a route.")
+            else:
+                with st.spinner("Requesting route from openrouteservice…"):
+                    route = get_routing_client().get_route(
+                        coord_lookup[origin_city],
+                        coord_lookup[dest_city],
+                        profile=route_profile,
+                    )
+
+                if route and route.get("geometry"):
+                    render_kpi_row([
+                        ("🛣️", "Road Distance", f"{route['distance_km']:,.1f} km"),
+                        ("⏱️", "Estimated Duration", f"{route['duration_min'] / 60:,.2f} h"),
+                        ("🚗", "Travel Profile", route["profile"]),
+                    ])
+
+                    lats = [point[1] for point in route["geometry"]]
+                    lons = [point[0] for point in route["geometry"]]
+                    origin_lat, origin_lon = coord_lookup[origin_city]
+                    dest_lat, dest_lon = coord_lookup[dest_city]
+
+                    fig_route = go.Figure()
+                    fig_route.add_trace(go.Scattermapbox(
+                        lat=lats, lon=lons, mode="lines",
+                        line=dict(width=4, color=COLORS["accent"]),
+                        name="Road route",
+                    ))
+                    fig_route.add_trace(go.Scattermapbox(
+                        lat=[origin_lat], lon=[origin_lon], mode="markers",
+                        marker=dict(size=15, color=COLORS["primary"]),
+                        name=f"Origin · {origin_city}",
+                    ))
+                    fig_route.add_trace(go.Scattermapbox(
+                        lat=[dest_lat], lon=[dest_lon], mode="markers",
+                        marker=dict(size=15, color=COLORS["info"]),
+                        name=f"Destination · {dest_city}",
+                    ))
+                    fig_route.update_layout(
+                        mapbox_style="carto-darkmatter",
+                        mapbox=dict(
+                            center=dict(lat=(origin_lat + dest_lat) / 2, lon=(origin_lon + dest_lon) / 2),
+                            zoom=4.4,
+                        ),
+                        height=480,
+                        margin=dict(l=0, r=0, t=36, b=0),
+                        legend=dict(orientation="h", yanchor="bottom", y=1.01),
+                        title=f"{origin_city} → {dest_city} · road-network route ({route_profile})",
+                    )
+                    st.plotly_chart(fig_route, use_container_width=True)
+
+                    st.caption(
+                        "Distance and duration are real road-network values returned by openrouteservice "
+                        "(HeiGIT). No traffic, weather or toll adjustments are applied."
+                    )
+                else:
+                    st.warning(
+                        "Routing is unavailable right now — the service may be unconfigured, "
+                        "rate-limited, or temporarily unreachable. Offline hotspot analytics are unaffected."
+                    )
+
+    st.markdown(
+        """
+        <div style="font-size:0.78rem;color:#8899A6;line-height:1.5;">
+            <strong>Why this matters:</strong> straight-line (Haversine) distance understates real
+            emergency-response travel time. Road-network routing converts hotspot coordinates into
+            realistic response distances, which is the metric that actually drives ambulance
+            dispatch planning.
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+#  TAB 4: Count vs Risk Rate Methodology
 # ═══════════════════════════════════════════════════════════════════════════════
 with tab_methodology:
     section_header("Senior Data Science Note: Accident Counts vs True Risk Rates", "⚖️")
