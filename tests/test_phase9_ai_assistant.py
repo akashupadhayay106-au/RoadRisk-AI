@@ -16,6 +16,8 @@ import pytest
 import unittest.mock as mock
 
 from src.rag_pipeline import (
+    MIN_QUERY_COVERAGE,
+    _term_matched,
     chunk_markdown_document,
     build_documentation_index,
     retrieve_project_context,
@@ -59,6 +61,42 @@ class TestRAGPipeline:
     def test_empty_query_returns_empty(self):
         assert retrieve_project_context("") == []
         assert retrieve_project_context("   ") == []
+
+    def test_incidental_single_term_overlap_is_not_retrieved(self):
+        """
+        Regression: a query about an unsupported topic once matched a chunk purely
+        because one of its rare words appeared once in the corpus. On a small corpus
+        that single term alone cleared the score threshold, so the assistant presented
+        an unrelated document as a grounded answer. Retrieval must return nothing and
+        let the caller report uncertainty instead.
+        """
+        chunks = retrieve_project_context("What is the average price of gold in Tokyo in 1982?")
+        assert chunks == []
+
+    def test_low_coverage_chunks_are_filtered(self):
+        """Every returned chunk must match at least MIN_QUERY_COVERAGE of the query terms."""
+        chunks = retrieve_project_context("How does CCTV sequence leakage audit work?", top_k=10)
+        assert chunks
+        assert all(c["coverage"] >= MIN_QUERY_COVERAGE for c in chunks)
+
+    def test_stop_words_do_not_deflate_coverage(self):
+        """
+        Coverage is measured over content terms only. Counting stop words such as
+        "what/are/the/with" would suppress coverage for perfectly answerable questions.
+        """
+        chunks = retrieve_project_context("What are the top 5 states with the most accidents?")
+        assert chunks
+        assert chunks[0]["coverage"] == 1.0
+
+    def test_plural_variants_still_count_as_matched(self):
+        """The index has no stemmer, so singular/plural forms must both satisfy coverage."""
+        assert _term_matched("accident", {"accidents": 3})
+        assert _term_matched("accidents", {"accident": 3})
+        assert _term_matched("severity", {"severity": 1})
+        assert not _term_matched("tokyo", {"accident": 3})
+
+    def test_stop_word_only_query_returns_empty(self):
+        assert retrieve_project_context("what is the") == []
 
 
 class TestPromptInjectionAndSecurity:

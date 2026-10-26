@@ -12,6 +12,17 @@ from pathlib import Path
 # This file lives at src/config.py → project root is one level up.
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
+# ── Local .env loading ────────────────────────────────────────────────────────
+# Loads a developer's local .env if present. On Streamlit Community Cloud there
+# is no .env; credentials come from st.secrets instead. Values already set in the
+# real environment always win (override=False).
+try:
+    from dotenv import load_dotenv
+
+    load_dotenv(PROJECT_ROOT / ".env", override=False)
+except Exception:  # python-dotenv optional / .env absent
+    pass
+
 # ── Data Paths ────────────────────────────────────────────────────────────────
 DATA_DIR         = PROJECT_ROOT / "data"
 RAW_DATA_DIR     = DATA_DIR / "raw"

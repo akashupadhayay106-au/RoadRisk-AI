@@ -21,7 +21,7 @@ import pandas as pd
 
 from src.config import PAGE_CONFIG, get_secret
 from src.utils import inject_custom_css, setup_sidebar, section_header, info_card, status_badge
-from src.ai_assistant import ask_roadrisk_assistant
+from src.ai_assistant import ask_roadrisk_assistant, get_provider_status
 
 # ── Streamlit Page Setup ───────────────────────────────────────────────────────
 st.set_page_config(**PAGE_CONFIG)
@@ -46,30 +46,89 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ── Check Provider & Configuration Status ────────────────────────────────────
-gemini_key = get_secret("GEMINI_API_KEY")
-has_gemini = bool(gemini_key and gemini_key != "your-gemini-api-key-here" and len(gemini_key) > 10)
+# provider_statuses() exposes ONLY configured/available booleans — never keys.
+provider_rows = get_provider_status()
+live_row = next((p for p in provider_rows if p["kind"] == "llm" and p["configured"]), None)
+
+_PILL_PALETTE = {
+    "ok": ("rgba(0,200,83,0.15)", "rgba(0,200,83,0.45)", "#00C853"),
+    "idle": ("rgba(77,168,255,0.12)", "rgba(77,168,255,0.4)", "#4DA8FF"),
+    "off": ("rgba(136,153,166,0.12)", "rgba(136,153,166,0.35)", "#8899A6"),
+}
+_PILL_DOT = {"ok": "🟢", "idle": "🔵", "off": "⚪"}
+
+
+def _pill(label: str, state: str) -> str:
+    """Render a small status chip. Shows only configuration state, never keys."""
+    bg, border, fg = _PILL_PALETTE[state]
+    return (
+        f"<span style=\"display:inline-block;padding:2px 10px;border-radius:999px;"
+        f"font-size:0.72rem;font-weight:600;margin:0 6px 6px 0;"
+        f"border:1px solid {border};background:{bg};color:{fg};\">"
+        f"{_PILL_DOT[state]} {label}</span>"
+    )
+
+
+def _pill_state(row: dict) -> str:
+    if row["name"] == "offline":
+        return "idle"
+    if not row["configured"]:
+        return "off"
+    if row["available"] is False:
+        return "off"
+    return "ok"
+
 
 col_s1, col_s2 = st.columns([3, 1])
 with col_s1:
-    if has_gemini:
-        st.markdown("""
-        <div style="background: rgba(0, 200, 83, 0.1); border: 1px solid rgba(0, 200, 83, 0.3); border-left: 4px solid #00C853; border-radius: 6px; padding: 0.6rem 0.9rem; margin-bottom: 1rem;">
-            <span style="color: #00C853; font-weight: 700; font-size: 0.85rem;">🟢 Active Engine: Google Gemini 1.5 Flash</span>
-            <span style="color: #8899A6; font-size: 0.8rem; margin-left: 8px;">(Live LLM with Grounded Project Context)</span>
-        </div>
-        """, unsafe_allow_html=True)
+    if live_row:
+        st.markdown(
+            f"""
+            <div style="background: rgba(0, 200, 83, 0.1); border: 1px solid rgba(0, 200, 83, 0.3); border-left: 4px solid #00C853; border-radius: 6px; padding: 0.6rem 0.9rem; margin-bottom: 1rem;">
+                <span style="color: #00C853; font-weight: 700; font-size: 0.85rem;">🟢 Active Engine: {live_row['label']} ({live_row['model']})</span>
+                <span style="color: #8899A6; font-size: 0.8rem; margin-left: 8px;">(Live LLM grounded with project context)</span>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
     else:
-        st.markdown("""
-        <div style="background: rgba(77, 168, 255, 0.1); border: 1px solid rgba(77, 168, 255, 0.3); border-left: 4px solid #4DA8FF; border-radius: 6px; padding: 0.6rem 0.9rem; margin-bottom: 1rem;">
-            <span style="color: #4DA8FF; font-weight: 700; font-size: 0.85rem;">🔵 Active Engine: Grounded Offline Knowledge Engine</span>
-            <span style="color: #8899A6; font-size: 0.8rem; margin-left: 8px;">(No API key required • 100% deterministic & private)</span>
-        </div>
-        """, unsafe_allow_html=True)
+        st.markdown(
+            """
+            <div style="background: rgba(77, 168, 255, 0.1); border: 1px solid rgba(77, 168, 255, 0.3); border-left: 4px solid #4DA8FF; border-radius: 6px; padding: 0.6rem 0.9rem; margin-bottom: 1rem;">
+                <span style="color: #4DA8FF; font-weight: 700; font-size: 0.85rem;">🔵 Active Engine: Grounded Offline Knowledge Engine</span>
+                <span style="color: #8899A6; font-size: 0.8rem; margin-left: 8px;">(No API key required • 100% deterministic & private)</span>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+    pills = "".join(
+        _pill(
+            f"{row['label']} — {'configured' if row['configured'] else 'not configured'}",
+            _pill_state(row),
+        )
+        for row in provider_rows
+    )
+    st.markdown(
+        "<div style='margin-bottom:0.8rem;'>"
+        "<span style='font-size:0.72rem;color:#8899A6;font-weight:600;'>PROVIDER STATUS (keys are never displayed):</span><br>"
+        f"{pills}</div>",
+        unsafe_allow_html=True,
+    )
 
 with col_s2:
     if st.button("🧹 Clear Chat History", use_container_width=True):
         st.session_state.messages = []
         st.rerun()
+    if st.button("🔌 Test Providers", use_container_width=True):
+        from src.providers import provider_statuses as _probe_statuses
+        with st.spinner("Probing configured providers..."):
+            st.session_state.provider_report = _probe_statuses(probe=True)
+
+if st.session_state.get("provider_report"):
+    with st.expander("🔍 Provider health probe (non-sensitive)", expanded=False):
+        for row in st.session_state["provider_report"]:
+            st.markdown(f"- **{row['label']}** — {row['detail']}")
 
 # ── Initialize Session State Messages ─────────────────────────────────────────
 if "messages" not in st.session_state:
@@ -143,12 +202,14 @@ if active_prompt:
                     st.markdown(f"- `{s}`")
 
         # Mode Badge Indicator
-        if resp_mode == "gemini":
-            st.caption("⚡ Powered by Google Gemini 1.5 Flash (Grounded with Local Context)")
-        elif resp_mode == "offline":
-            st.caption("🔒 Powered by Grounded Offline Knowledge & SQLite Parameterized Queries")
-        elif resp_mode == "safety_block":
-            st.caption("🛡️ Security Filter Enforced")
+        _MODE_LABELS = {
+            "gemini": "⚡ Powered by Google Gemini (grounded with local context)",
+            "groq": "⚡ Powered by Groq Cloud (grounded with local context)",
+            "huggingface": "⚡ Powered by Hugging Face Inference (grounded with local context)",
+            "offline": "🔒 Powered by Grounded Offline Knowledge & SQLite Parameterized Queries",
+            "safety_block": "🛡️ Security Filter Enforced",
+        }
+        st.caption(_MODE_LABELS.get(resp_mode, f"⚡ Powered by {resp_mode}"))
 
     # Save to history
     st.session_state.messages.append({

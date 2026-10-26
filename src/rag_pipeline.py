@@ -26,6 +26,41 @@ logger = logging.getLogger(__name__)
 DOCS_DIR = PROJECT_ROOT / "docs"
 _CACHED_INDEX: Optional[List[Dict[str, Any]]] = None
 
+# Minimum share of distinct query terms a chunk must match to count as relevant.
+# A pure score threshold is unsafe on this small corpus: with ~75 chunks a single
+# term of document-frequency 1 scores IDF = log(1 + 74.5/1.5) ~= 3.93, so one
+# incidental rare-word overlap would clear the score gate on its own. Requiring
+# term coverage as well makes "matched one out of five words" fail, while every
+# genuinely answerable query in the documentation set scores 50-100% coverage.
+MIN_QUERY_COVERAGE = 0.5
+
+# Index and query text share one stop-word list so that relevance coverage is
+# measured over the same vocabulary that is actually searchable. Without this,
+# counting "what/are/the/with" as query terms would deflate coverage and wrongly
+# reject legitimately answerable questions.
+STOP_WORDS = {
+    "the", "a", "an", "and", "or", "in", "on", "at", "to", "for", "of", "with",
+    "by", "is", "are", "was", "were", "this", "that", "it", "from", "as", "be",
+    "what", "when", "where", "which", "who", "whom", "how", "why", "can", "could",
+    "should", "would", "does", "do", "did", "have", "has", "had", "been", "about",
+    "any", "some", "more", "most", "other", "into", "over", "after",
+}
+
+
+def _term_matched(term: str, tf_dict: Dict[str, int]) -> bool:
+    """
+    Check whether a query term occurs in a chunk, tolerating simple plural variants.
+
+    The index intentionally has no stemmer, so "accident" and "accidents" are
+    distinct tokens. Term coverage must not penalise a relevant chunk merely for
+    using the other variant of the same word.
+    """
+    if term in tf_dict:
+        return True
+    if term.endswith("s") and term[:-1] in tf_dict:
+        return True
+    return f"{term}s" in tf_dict
+
 
 def chunk_markdown_document(filepath: Path) -> List[Dict[str, Any]]:
     """
@@ -113,18 +148,10 @@ def build_documentation_index(force_rebuild: bool = False) -> List[Dict[str, Any
         indexed_chunks.extend(chunks)
 
     # Tokenize each chunk for BM25 search
-    stop_words = {
-        "the", "a", "an", "and", "or", "in", "on", "at", "to", "for", "of", "with",
-        "by", "is", "are", "was", "were", "this", "that", "it", "from", "as", "be",
-        "what", "when", "where", "which", "who", "whom", "how", "why", "can", "could",
-        "should", "would", "does", "do", "did", "have", "has", "had", "been", "about",
-        "any", "some", "more", "most", "other", "into", "over", "after"
-    }
-
     for idx, c in enumerate(indexed_chunks):
         c["chunk_id"] = idx
         tokens = re.findall(r"\b[a-zA-Z0-9_\-]{2,}\b", (c["title"] + " " + c["content"]).lower())
-        c["tokens"] = [t for t in tokens if t not in stop_words]
+        c["tokens"] = [t for t in tokens if t not in STOP_WORDS]
         c["token_counts"] = Counter(c["tokens"])
         c["doc_len"] = len(c["tokens"])
 
@@ -137,10 +164,21 @@ def retrieve_project_context(
     query: str,
     top_k: int = 4,
     min_score: float = 2.0,
+    min_coverage: float = MIN_QUERY_COVERAGE,
 ) -> List[Dict[str, Any]]:
     """
     Retrieve the most relevant documentation chunks for a user query using BM25 scoring.
     Works completely offline with zero API calls.
+
+    A chunk is returned only when it passes BOTH gates:
+      1. ``score >= min_score``      — lexical relevance weight
+      2. ``coverage >= min_coverage`` — share of distinct query terms actually present
+
+    The coverage gate exists so the assistant can honestly report uncertainty:
+    without it, a query about an unsupported topic can still retrieve a chunk that
+    shares one incidental word, which would be presented to the user as a grounded
+    answer. Returning ``[]`` instead lets the caller state that it could not find
+    sufficient verified information.
     """
     index = build_documentation_index()
     if not index or not query.strip():
@@ -148,6 +186,12 @@ def retrieve_project_context(
 
     query_tokens = re.findall(r"\b[a-zA-Z0-9_\-]{2,}\b", query.lower())
     if not query_tokens:
+        return []
+
+    # Coverage is measured over content terms only: stop words are removed from the
+    # index, so including them here would make coverage unreachable for normal prose.
+    distinct_terms = sorted({t for t in query_tokens if t not in STOP_WORDS})
+    if not distinct_terms:
         return []
 
     N = len(index)
@@ -185,12 +229,16 @@ def retrieve_project_context(
         if query.lower() in c["content"].lower():
             score += 3.0
 
-        if score >= min_score:
+        matched_terms = [t for t in distinct_terms if _term_matched(t, tf_dict)]
+        coverage = len(matched_terms) / len(distinct_terms)
+
+        if score >= min_score and coverage >= min_coverage:
             scored_chunks.append({
                 "source": c["source"],
                 "title": c["title"],
                 "content": c["content"],
                 "score": round(score, 3),
+                "coverage": round(coverage, 3),
             })
 
     scored_chunks.sort(key=lambda x: x["score"], reverse=True)

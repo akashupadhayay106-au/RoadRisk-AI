@@ -39,7 +39,11 @@ torch>=2.1.0
 torchvision>=0.16.0
 
 # ----- GenAI (Phase 9) -----
-google-generativeai>=0.5.0
+# Current supported Google Gen AI SDK (the legacy `google-generativeai`
+# package reached end of support and is no longer used).
+google-genai>=1.0.0,<2.0.0
+# Groq and Hugging Face are called over plain HTTPS via `requests`,
+# so no extra SDK is required for them.
 
 # ----- Testing -----
 pytest>=8.0.0

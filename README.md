@@ -3,7 +3,7 @@
 [![Python](https://img.shields.io/badge/Python-3.12-3776AB.svg?style=flat&logo=python&logoColor=white)](https://www.python.org/)
 [![Streamlit](https://img.shields.io/badge/Streamlit-1.66+-FF4B4B.svg?style=flat&logo=streamlit&logoColor=white)](https://streamlit.io/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/pytest-116%20Passed-brightgreen.svg)](tests/)
+[![Tests](https://img.shields.io/badge/pytest-139%20Passed-brightgreen.svg)](tests/)
 
 > **RoadRisk AI** is an end-to-end, multi-source road accident intelligence platform developed as an MCA Data Science portfolio project. It integrates data engineering, relational SQLite analytics, supervised machine learning (with leakage prevention), geospatial clustering, edge computer vision with Grad-CAM, historical weather correlation, explainable AI, and a grounded GenAI conversational assistant with an offline BM25 RAG engine.
 
@@ -18,7 +18,7 @@
 - **🗺️ Geospatial Hotspot Explorer:** DBSCAN clustering with Haversine distance metric distinguishing observed accident concentrations from true traffic risk rates, with separate UK benchmark validation on UrbanGB.
 - **🌦️ Historical Weather Intelligence:** Weather feature retrieval via the Open-Meteo API with SQLite caching and atmospheric risk multipliers.
 - **📹 CCTV Accident Detection & Video Sequence Audit:** MobileNetV2 transfer learning (~9.2 MB footprint, sub-50ms CPU inference) with Grad-CAM attention heatmaps, video stream frame sampling, and an empirical video sequence split leakage audit (93.7% contamination in naive Kaggle splits resolved via GroupShuffleSplit).
-- **🤖 Grounded AI Safety Assistant:** Dual-mode assistant featuring Google Gemini 1.5 Flash paired with a deterministic offline BM25 documentation retriever that prevents hallucinations, blocks prompt injection, and operates on parameterized read-only queries.
+- **🤖 Grounded AI Safety Assistant:** Dual-mode assistant with a pluggable live-LLM provider chain (Google Gemini → Groq → Hugging Face, all optional) paired with a deterministic offline BM25 documentation retriever that prevents hallucinations, blocks prompt injection, and operates on parameterized read-only queries. Provider status is shown without ever exposing a key.
 - **📈 Explainable AI & Monitoring:** Model transparency powered by global Gini feature importances, single-incident risk factor decomposition, and explicit causal governance (*Feature Importance ≠ Causality*).
 
 ---

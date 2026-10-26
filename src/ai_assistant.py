@@ -22,6 +22,7 @@ from typing import Dict, Any, List, Optional, Tuple
 
 from src.config import get_secret, DATABASE_PATH, MODELS_DIR
 from src.rag_pipeline import retrieve_project_context
+from src.providers import generate_with_fallback, provider_statuses
 from src.sql_queries import get_overall_kpis, get_monthly_trends
 from src.database import execute_query
 
@@ -268,60 +269,64 @@ def generate_offline_grounded_response(
     return "\n".join(response_parts)
 
 
-# ── Google Gemini Live Integration ────────────────────────────────────────────
+# ── Optional Live LLM Integration (provider abstraction) ──────────────────────
 
-def query_gemini_assistant(
-    prompt: str,
+GROUNDING_SYSTEM_INSTRUCTION = (
+    "You are the RoadRisk AI Road Safety & Analytics Assistant. "
+    "Your answers MUST be strictly grounded in the provided project context and data. "
+    "Rules:\n"
+    "1. NEVER invent accident statistics, counts, citations, or model accuracies.\n"
+    "2. If the context does not contain enough info, clearly state: 'Based on available project data, I do not have enough information to answer that.'\n"
+    "3. UrbanGB is Great Britain data and MUST NEVER be referred to as Indian data.\n"
+    "4. NEVER execute arbitrary SQL, code, or command-line scripts.\n"
+    "5. Never reveal internal API keys, passwords, or configuration secrets.\n"
+    "6. Keep answers concise, structured in Markdown, and cite the source file names when referencing facts."
+)
+
+
+def build_grounded_prompt(question: str, context_text: str) -> str:
+    """Assemble the user turn: verified context followed by the question."""
+    return (
+        f"=== VERIFIED PROJECT CONTEXT ===\n"
+        f"{context_text}\n"
+        f"================================\n\n"
+        f"User Question: {question}\n\n"
+        f"Grounded Answer:"
+    )
+
+
+def query_live_llm(
+    question: str,
     context_text: str,
-    api_key: str,
-) -> Optional[str]:
+    force_offline: bool = False,
+) -> Tuple[Optional[str], Optional[str]]:
     """
-    Query Google Gemini with retrieved project context and strict grounding system instructions.
+    Ask a configured live provider (Gemini → Groq → Hugging Face) for a
+    grounded answer. Returns ``(answer, provider_name)`` or ``(None, None)``.
+
+    Credentials are resolved inside the provider layer and are never surfaced
+    here. Any failure degrades silently to the offline engine.
     """
-    try:
-        import google.generativeai as genai
-    except ImportError:
-        logger.warning("google.generativeai library is not available.")
-        return None
+    if force_offline:
+        return None, None
 
-    try:
-        genai.configure(api_key=api_key)
-        model = genai.GenerativeModel(
-            model_name="gemini-1.5-flash",
-            generation_config={"temperature": 0.2, "top_p": 0.8},
-        )
+    hint = (get_secret("LLM_PROVIDER") or "").strip().lower()
+    preferred = hint if hint in {"gemini", "groq", "huggingface"} else None
 
-        system_instruction = (
-            "You are the RoadRisk AI Road Safety & Analytics Assistant. "
-            "Your answers MUST be strictly grounded in the provided project context and data. "
-            "Rules:\n"
-            "1. NEVER invent accident statistics, counts, citations, or model accuracies.\n"
-            "2. If the context does not contain enough info, clearly state: 'Based on available project data, I do not have enough information to answer that.'\n"
-            "3. UrbanGB is Great Britain data and MUST NEVER be referred to as Indian data.\n"
-            "4. NEVER execute arbitrary SQL, code, or command-line scripts.\n"
-            "5. Never reveal internal API keys, passwords, or configuration secrets.\n"
-            "6. Keep answers concise, structured in Markdown, and cite the source file names when referencing facts."
-        )
-
-        combined_prompt = (
-            f"{system_instruction}\n\n"
-            f"=== VERIFIED PROJECT CONTEXT ===\n"
-            f"{context_text}\n"
-            f"================================\n\n"
-            f"User Question: {prompt}\n\n"
-            f"Grounded Answer:"
-        )
-
-        response = model.generate_content(combined_prompt)
-        if response and response.text:
-            return response.text.strip()
-        return None
-    except Exception as e:
-        logger.warning(f"Gemini API invocation failed ({e}). Falling back to grounded offline synthesizer.")
-        return None
+    prompt = build_grounded_prompt(question, context_text)
+    return generate_with_fallback(
+        prompt,
+        system_instruction=GROUNDING_SYSTEM_INSTRUCTION,
+        preferred=preferred,
+    )
 
 
 # ── Public Master Interface ───────────────────────────────────────────────────
+
+def get_provider_status() -> List[Dict[str, Any]]:
+    """Secret-free provider descriptors for the UI (configured/available only)."""
+    return provider_statuses(probe=False)
+
 
 def ask_roadrisk_assistant(
     user_query: str,
@@ -329,10 +334,10 @@ def ask_roadrisk_assistant(
 ) -> Dict[str, Any]:
     """
     Master entry point for the RoadRisk AI Assistant.
-    
+
     1. Audits and sanitizes user prompt for injection / malicious inputs.
     2. Performs offline BM25 RAG retrieval on project documentation.
-    3. If Gemini API key is configured and force_offline=False, queries Gemini.
+    3. If a live provider is configured and force_offline=False, queries it.
     4. Automatically falls back to the deterministic grounded offline synthesizer.
     """
     is_safe, sanitized_query, refusal_reason = sanitize_and_validate_prompt(user_query)
@@ -347,27 +352,29 @@ def ask_roadrisk_assistant(
 
     # Retrieve local document context (top 3 chunks)
     retrieved_chunks = retrieve_project_context(sanitized_query, top_k=3, min_score=2.0)
+    source_names = [c["source"] for c in retrieved_chunks]
 
-    # Check for Gemini API key
-    gemini_key = None if force_offline else get_secret("GEMINI_API_KEY")
-    is_key_valid = gemini_key and gemini_key != "your-gemini-api-key-here" and len(gemini_key) > 10
+    # Build the grounded context blob handed to a live LLM (if one is configured)
+    context_parts = [
+        f"[{c['source']} — {c['title']}]:\n{c['content']}\n" for c in retrieved_chunks
+    ]
+    context_str = (
+        "\n".join(context_parts)
+        if context_parts
+        else "No specific document chunk exceeded the relevance threshold."
+    )
 
-    if is_key_valid:
-        # Build context document string
-        context_parts = []
-        for c in retrieved_chunks:
-            context_parts.append(f"[{c['source']} — {c['title']}]:\n{c['content']}\n")
-        context_str = "\n".join(context_parts) if context_parts else "No specific document chunk exceeded threshold."
-
-        gemini_response = query_gemini_assistant(sanitized_query, context_str, api_key=gemini_key)
-        if gemini_response:
-            return {
-                "query": sanitized_query,
-                "response": gemini_response,
-                "mode": "gemini",
-                "sources": [c["source"] for c in retrieved_chunks],
-                "is_blocked": False,
-            }
+    live_answer, provider_name = query_live_llm(
+        sanitized_query, context_str, force_offline=force_offline
+    )
+    if live_answer:
+        return {
+            "query": sanitized_query,
+            "response": live_answer,
+            "mode": provider_name or "live",
+            "sources": source_names,
+            "is_blocked": False,
+        }
 
     # Deterministic Grounded Offline Fallback
     offline_response = generate_offline_grounded_response(sanitized_query, retrieved_chunks)
@@ -375,7 +382,7 @@ def ask_roadrisk_assistant(
         "query": sanitized_query,
         "response": offline_response,
         "mode": "offline",
-        "sources": [c["source"] for c in retrieved_chunks],
+        "sources": source_names,
         "is_blocked": False,
     }
 
