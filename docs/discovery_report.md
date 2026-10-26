@@ -33,6 +33,6 @@ This report documents the empirical audit of the 5 candidate datasets evaluated 
 
 ### Dataset 5: CCTV Highway Surveillance Image Dataset
 - **File**: `data/train/`, `data/val/`, `data/test/` (990 images)
-- **Leakage Finding**: 52 out of 59 video sequence groups (93.7% of all frames) cross naive folder splits (e.g. `acc1 (x).jpg` appears in train, val, and test).
+- **Leakage Finding**: **52 out of 58 video sequence groups (928/989 frames = 93.83%)** cross naive folder splits under the composite `(class_name, video_group)` key (e.g. `acc1 (x).jpg` appears in train, val, and test).
 - **Mitigation**: Implemented sequence grouping heuristic and `data/processed/cctv_grouped_manifest.csv` using GroupShuffleSplit.
 - **Target Routing**: Used for fine-tuning MobileNetV2 edge classifier (`models/cctv_mobilenet_v2.pth`) and Grad-CAM saliency heatmaps.

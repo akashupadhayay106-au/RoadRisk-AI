@@ -12,8 +12,9 @@ flowchart TD
     subgraph Analytics_Layer ["Analytical & Geospatial Intelligence"]
         SQLITE --> QUERY_BANK["Parameterized SQL Query Bank<br/>(src/sql_queries.py)"]
         SQLITE --> GEO["DBSCAN Spatial Clustering<br/>Haversine Metric (eps=1.5km)<br/>(src/hotspot_analysis.py)"]
-        OM_API["Open-Meteo Weather API<br/>Historical WMO Codes"] --> WEATHER_CACHE[("weather_cache Table")]
+        OM_API["Open-Meteo Weather API<br/>Historical WMO Codes<br/>(keyless default)"] --> WEATHER_CACHE[("weather_cache Table")]
         WEATHER_CACHE --> RISK_MULT["Atmospheric Risk Intelligence<br/>(src/weather_client.py)"]
+        ORS_API["HeiGIT openrouteservice API<br/>Directions · Isochrones · Geocoding"] --> ROUTING["Road Routing & Reachability<br/>(src/routing_client.py)"]
     end
 
     subgraph Machine_Learning_Layer ["Machine Learning & Computer Vision Core"]
@@ -32,7 +33,7 @@ flowchart TD
         QUERY_BANK --> ASSISTANT
         SEV_MODEL --> ASSISTANT
         MOBILENET --> ASSISTANT
-        GEMINI["Google Gemini 1.5 Flash<br/>(Optional Live LLM Provider)"] -.-> ASSISTANT
+        PROVIDERS["Pluggable LLM Provider Layer<br/>(Gemini · Groq · Hugging Face · Offline)<br/>(src/providers.py)"] -.-> ASSISTANT
     end
 
     subgraph Presentation_Layer ["Streamlit Multi-Page Interactive Portal (app.py)"]
@@ -63,8 +64,13 @@ flowchart TD
 
 ### 3. Grounded Retrieval-Augmented Generation (RAG)
 - Dual-mode architecture:
-  - **Online**: Google Gemini 1.5 Flash passed strictly grounded context chunks and parameterized analytical metrics.
-  - **Offline**: High-speed, deterministic BM25 retriever chunking local Markdown documentation and data cards, producing accurate citation-backed responses without API keys.
+  - **Online**: A pluggable provider layer (`src/providers.py`) tries providers in preference order — **Google Gemini** (via the current `google-genai` SDK), **Groq** (OpenAI-compatible), **Hugging Face** (optional inference) — passing strictly grounded context chunks and parameterized analytical metrics. Each provider is wrapped with configurable timeouts, error isolation, and automatic fallback to the next provider.
+  - **Offline**: High-speed, deterministic BM25 retriever chunking local Markdown documentation and data cards, producing accurate citation-backed responses without API keys. The offline engine is always available and is the guaranteed fallback.
+- **Secret safety**: The provider layer exposes only `configured`/`available` booleans and never logs or renders key values; keys are read from environment variables locally and Streamlit secrets in deployment.
+- **Retrieval relevance gate**: A BM25 score threshold is combined with a query term-coverage gate, so unsupported questions are reported as uncertain rather than answered from weak matches.
+
+### 3b. Routing & Reachability
+- **HeiGIT openrouteservice (ORS)**: `src/routing_client.py` performs directions, isochrone, and geocoding requests using `OPENROUTESERVICE_API_KEY`. Requests use the ORS `Authorization` header and `[lon, lat]` coordinate order. The "Route & Reachability" tab in `5_Hotspot_Map.py` renders live routes over accident hotspots and degrades gracefully when the key is absent.
 
 ### 4. Interactive Presentation Tier
 - 10 structured Streamlit pages built using an ergonomic dark design system (`Inter` typography, glassmorphic metric cards, responsive Plotly charts, and interactive Mapbox geospatial maps).

@@ -56,11 +56,26 @@ Streamlit Community Cloud provides 100% free hosting for portfolio data apps wit
    - **App URL**: `roadrisk-ai.streamlit.app` (or customizable subdomain).
 4. Click **Advanced settings...**:
    - In **Python version**, select **3.12** (matches local development).
-   - In **Secrets**, paste your optional configuration:
+   - In **Secrets**, paste your optional configuration (all keys are optional — the app runs fully in offline/demo mode without them):
      ```toml
+     # Optional: choose a preferred provider (gemini | groq | huggingface)
+     LLM_PROVIDER = "gemini"
+
+     # Optional: Google Gemini (current google-genai SDK)
      GEMINI_API_KEY = "your-actual-gemini-api-key"
+     GEMINI_MODEL = "gemini-2.0-flash"
+
+     # Optional: Groq Cloud
+     # GROQ_API_KEY = "your-actual-groq-api-key"
+     # GROQ_MODEL = "llama-3.3-70b-versatile"
+
+     # Optional: Hugging Face inference
+     # HF_TOKEN = "your-actual-hf-token"
+
+     # Optional: HeiGIT openrouteservice (route & reachability)
+     # OPENROUTESERVICE_API_KEY = "your-actual-ors-api-key"
      ```
-   *(Note: The app will run smoothly in grounded offline mode even without a key!)*
+   *(The app will run smoothly in grounded offline mode even without any key.)*
 5. Click **Deploy!**
 6. Streamlit Cloud will run `pip install -r requirements.txt` and launch the interactive dashboard within 2–3 minutes.
 

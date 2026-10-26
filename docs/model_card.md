@@ -24,7 +24,7 @@
   - Latency: ~35–50 ms on CPU (~20–28 FPS)
 - **Limitations & Disclaimers**:
   - Frame-level classification is offline experimental analysis, not certified real-time accident detection.
-  - Video sequence audit revealed that naive splitting causes background memorization (93.7% frames from leaking groups). Leakage-free grouped evaluation provides true generalization baseline.
+  - Video sequence audit revealed that naive splitting causes background memorization (**52/58 sequence groups; 928/989 frames = 93.83%** from leaking groups). Leakage-free grouped evaluation provides true generalization baseline.
 
 ## 3. Geospatial Hotspot Clustering Model
 - **Task**: Unsupervised spatial density clustering identifying accident blackspots.

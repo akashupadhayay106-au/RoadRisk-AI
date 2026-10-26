@@ -20,7 +20,7 @@ import json
 import logging
 from typing import Dict, Any, List, Optional, Tuple
 
-from src.config import get_secret, DATABASE_PATH, MODELS_DIR
+from src.config import get_secret, DATABASE_PATH, MODELS_DIR, PROCESSED_DIR
 from src.rag_pipeline import retrieve_project_context
 from src.providers import generate_with_fallback, provider_statuses
 from src.sql_queries import get_overall_kpis, get_monthly_trends
@@ -154,6 +154,24 @@ def tool_get_model_telemetry() -> Dict[str, Any]:
     return telemetry
 
 
+def tool_get_cctv_leakage_audit() -> Dict[str, Any]:
+    """
+    Recompute the CCTV sequence-leakage audit from the generated manifest so that
+    assistant answers always reflect the current, verified figures rather than
+    hardcoded numbers. Returns an empty dict if the manifest is unavailable.
+    """
+    manifest_path = PROCESSED_DIR / "cctv_grouped_manifest.csv"
+    if not manifest_path.exists():
+        return {}
+    try:
+        import pandas as pd
+        from src.cctv_preprocessing import audit_split_leakage
+        return audit_split_leakage(pd.read_csv(manifest_path))
+    except Exception as exc:
+        logger.warning("CCTV leakage audit unavailable: %s", type(exc).__name__)
+        return {}
+
+
 # ── Grounded Offline Response Engine ──────────────────────────────────────────
 
 def generate_offline_grounded_response(
@@ -223,11 +241,19 @@ def generate_offline_grounded_response(
                 f"- **Simple Baseline Comparison**: Color Histograms + 32x32 Thumbnails + Logistic Regression achieved "
                 f"{base_m.get('accuracy', 0.65)*100:.1f}% accuracy, confirming transfer learning value."
             )
-        response_parts.append(
-            "- **Scientific Sequence Leakage Audit**: A rigorous audit revealed that 52 out of 59 video groups "
-            "(93.7% of all frames) cross naive train/test splits. The project introduces "
-            "`cctv_grouped_manifest.csv` to enforce GroupShuffleSplit and prevent background memorization."
-        )
+        audit = tool_get_cctv_leakage_audit()
+        if audit:
+            response_parts.append(
+                f"- **Scientific Sequence Leakage Audit**: A rigorous audit revealed that "
+                f"{audit.get('leaking_groups_count')} out of {audit.get('total_groups')} video groups "
+                f"({audit.get('leakage_percentage')}% of all frames) cross naive train/test splits. The project introduces "
+                "`cctv_grouped_manifest.csv` to enforce GroupShuffleSplit and prevent background memorization."
+            )
+        else:
+            response_parts.append(
+                "- **Scientific Sequence Leakage Audit**: Frames are audited by source video ID, and the project "
+                "introduces `cctv_grouped_manifest.csv` to enforce GroupShuffleSplit and prevent background memorization."
+            )
         response_parts.append(
             "- **Operational Boundary**: This is an educational frame-classification prototype, "
             "not certified for autonomous real-time emergency dispatch."

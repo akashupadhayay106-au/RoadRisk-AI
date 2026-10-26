@@ -2,7 +2,7 @@
 
 **Status Date**: October 24, 2026  
 **Environment**: Python 3.12.7 (Windows x86_64, PowerShell)  
-**Total Tests**: **116 Passed** / 0 Failed (100% Pass Rate across 10 Phases)
+**Total Tests**: **167 Passed** / 0 Failed (100% Pass Rate across 13 Phases)
 
 ---
 
@@ -18,9 +18,9 @@
 | **M-05** | Accident Severity ML Classification | **COMPLETE** | Implemented balanced Random Forest pipeline (`models/severity_pipeline.joblib`); eliminated 7 post-crash target leakage fields; evaluated on macro-F1. |
 | **M-06** | Geospatial Hotspot Analysis | **COMPLETE** | Implemented DBSCAN with Haversine distance metric (`eps=1.5km`); interactive Mapbox density heatmaps (`5_Hotspot_Map.py`); UrbanGB UK benchmark. |
 | **M-07** | Historical Weather Risk Intelligence | **COMPLETE** | Open-Meteo API client with SQLite caching (`weather_cache` table); WMO weather interpretation; weather risk multipliers (`6_Weather_Analysis.py`). |
-| **M-08** | CCTV Computer Vision & Sequence Audit | **COMPLETE** | Fine-tuned MobileNetV2 (`models/cctv_mobilenet_v2.pth`); Grad-CAM overlays; audited sequence split leakage (93.7% frames leaking); generated `cctv_grouped_manifest.csv`; baseline model benchmark; video stream frame sampling (`7_CCTV_Detection.py`). |
-| **M-09** | Grounded GenAI Safety Assistant | **COMPLETE** | Dual-engine assistant (`src/ai_assistant.py`, `src/rag_pipeline.py`); Gemini 1.5 Flash + offline BM25 RAG; prompt injection defense; parameterized SQL tools; `8_AI_Assistant.py`. |
-| **M-10** | Complete QA & Security Hardening | **COMPLETE** | Clean `compileall` (zero warnings); explainability suite (`src/explainability.py`, `9_Model_Explainability.py`); 116 passing pytest tests; `docs/qa_report.md`. |
+| **M-08** | CCTV Computer Vision & Sequence Audit | **COMPLETE** | Fine-tuned MobileNetV2 (`models/cctv_mobilenet_v2.pth`); Grad-CAM overlays; audited sequence split leakage (**52/58 sequence groups, 928/989 frames = 93.83% leaking** under the composite `(class_name, video_group)` key); generated `cctv_grouped_manifest.csv` (0 leaking groups; train 769 / test 127 / val 93); baseline model benchmark; video stream frame sampling (`7_CCTV_Detection.py`). |
+| **M-09** | Grounded GenAI Safety Assistant | **COMPLETE** | Dual-engine assistant (`src/ai_assistant.py`, `src/rag_pipeline.py`); pluggable provider layer — Gemini (current `google-genai` SDK), Groq, Hugging Face — with timeouts, error isolation and automatic fallback to an offline BM25 RAG engine; prompt injection defense; parameterized SQL tools; secret-safe provider status indicators (`8_AI_Assistant.py`). |
+| **M-10** | Complete QA & Security Hardening | **COMPLETE** | Clean `compileall` (zero warnings); explainability suite (`src/explainability.py`, `9_Model_Explainability.py`); 167 passing pytest tests; `docs/qa_report.md`. |
 | **M-11** | GitHub & Streamlit Cloud Deployment Prep | **COMPLETE** | Clean `.gitignore`; zero secret exposure; `.env.example`; `docs/deployment_checklist.md` with step-by-step push/deploy commands; local commit staged. |
 | **M-12** | Final Portfolio Documentation & Packaging | **COMPLETE** | Full documentation package (`README.md`, `architecture.md`, `discovery_report.md`, data cards, model card, risk register, demo script, resume & viva defense); clean portfolio ZIP built and verified. |
 
@@ -38,7 +38,7 @@
    - **Algorithm**: MobileNetV2 with ImageNet-1K transfer learning (`models/cctv_mobilenet_v2.pth`).
    - **Naive Test Set (101 frames)**: Accuracy: **81.0%**, Macro-F1: **0.8091**, ROC-AUC: **0.8266**, Latency: **~35–50 ms** on CPU.
    - **Baseline Benchmark**: Color Histograms + 32x32 Spatial Thumbnails + Logistic Regression achieved **65.0%** Accuracy and **0.6457** Macro-F1 (`models/cctv_baseline_metrics.json`).
-   - **Sequence Leakage Audit**: Empirical audit confirmed 52/59 video sequences cross naive splits; generated `data/processed/cctv_grouped_manifest.csv` for leakage-free grouped evaluation.
+   - **Sequence Leakage Audit**: Empirical audit confirmed **52/58 sequence groups (928/989 frames = 93.83%)** cross naive splits under the composite `(class_name, video_group)` key; generated `data/processed/cctv_grouped_manifest.csv` for leakage-free grouped evaluation (0 leaking groups).
 
 ---
 

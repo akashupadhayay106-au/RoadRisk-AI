@@ -404,9 +404,9 @@ with tabs[1]:
     # Metric summary
     a1, a2, a3, a4 = st.columns(4)
     with a1:
-        metric_card("Total Dataset Frames", f"{audit_res['total_frames']}", "990 indexed images", border_color="#4DA8FF")
+        metric_card("Total Dataset Frames", f"{audit_res['total_frames']}", f"{audit_res['total_frames']} indexed images", border_color="#4DA8FF")
     with a2:
-        metric_card("Total Video Groups", f"{audit_res['total_groups']}", "59 distinct sequence IDs", border_color="#8899A6")
+        metric_card("Total Video Groups", f"{audit_res['total_groups']}", f"{audit_res['total_groups']} distinct sequence IDs", border_color="#8899A6")
     with a3:
         metric_card("Leaking Video Groups", f"{audit_res['leaking_groups_count']} / {audit_res['total_groups']}", "Present in >1 split", border_color="#FF4B4B")
     with a4:
@@ -416,7 +416,7 @@ with tabs[1]:
 
     info_card(
         "⚠️ <strong>Empirical Audit Finding:</strong><br>"
-        f"In the raw dataset structure, <strong>{audit_res['leaking_groups_count']} out of {audit_res['total_groups']} video sequence groups (93.7% of all frames)</strong> "
+        f"In the raw dataset structure, <strong>{audit_res['leaking_groups_count']} out of {audit_res['total_groups']} video sequence groups ({audit_res['leakage_percentage']}% of all frames)</strong> "
         "have frames split across both training and evaluation sets (e.g. sequence <code>acc1</code> appears in train, val, and test).<br><br>"
         "• <strong>Evaluation Inflation:</strong> The reported test accuracy (81.0%) on the naive split reflects partial background memorization.<br>"
         "• <strong>Generalization Reality:</strong> When evaluated with <em>leakage-free grouped splitting</em> (where whole video sequences are held out), "

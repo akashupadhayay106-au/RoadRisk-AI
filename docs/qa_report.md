@@ -3,11 +3,11 @@
 ## 1. Executive QA Summary
 - **Execution Date**: October 24, 2026
 - **Target Runtime**: Python 3.12.7 (Windows x86_64)
-- **Total Test Suites**: 10 test modules (`tests/test_phase1.py` through `tests/test_phase10_qa_hardening.py`)
-- **Total Tests Executed**: **116**
-- **Tests Passed**: **116** (100.0% pass rate)
+- **Total Test Suites**: 13 test modules (`tests/test_phase1.py` through `tests/test_phase13_ui_smoke.py`)
+- **Total Tests Executed**: **167**
+- **Tests Passed**: **167** (100.0% pass rate)
 - **Tests Failed / Errors**: **0**
-- **Full Test Suite Runtime**: 23.81 seconds
+- **Full Test Suite Runtime**: ~67.9 seconds
 - **Static Compilation (`compileall`)**: 100% clean compilation across all `src/`, `pages/`, `tests/`, and `app.py` files with zero syntax errors and zero warnings.
 
 ---
@@ -26,7 +26,10 @@
 | `test_phase8_cctv_detection.py` | CCTV Computer Vision | 14 | PASSED | MobileNetV2 architecture, inference latency, Grad-CAM overlays, sequence leakage audit, baseline model, video frame sampling. |
 | `test_phase9_ai_assistant.py` | Grounded GenAI & RAG | 17 | PASSED | BM25 document indexing, prompt injection defense, SQL injection blocking, offline grounded fallback, uncertainty reporting. |
 | `test_phase10_qa_hardening.py` | QA & Security Hardening | 13 | PASSED | Malformed inputs, database integrity checks, global feature importance, local prediction attribution, secret protection. |
-| **Total** | | **116** | **ALL PASSED** | |
+| `test_phase11_providers.py` | LLM Provider Abstraction | 18 | PASSED | Gemini/Groq/Hugging Face request payloads, timeouts, provider fallback chain, secret-free status descriptors, no-API-key path. |
+| `test_phase12_routing.py` | Routing & Weather Status | 14 | PASSED | openrouteservice auth header and `[lon, lat]` ordering, isochrones, geocoding, keyless weather status. |
+| `test_phase13_ui_smoke.py` | UI Smoke & Structure | 14 | PASSED | Exactly 10 pages, per-page compilation, Home page renders without exception (`AppTest`), no stale "pending" module flags. |
+| **Total** | | **167** | **ALL PASSED** | |
 
 ---
 
@@ -50,13 +53,14 @@
 2. **ML Target Leakage Screening**:
    - Post-crash outcome features (`Casualty_severity`, `Casualty_class`, `Hospital_treated`) are permanently isolated from the pre-crash feature set in `src/features.py`.
 3. **CCTV Video Sequence Leakage Audit**:
-   - Manifest audit empirically documented that 52 out of 59 video sequence groups (93.7% of all frames) cross split boundaries in the raw folder distribution.
-   - Leakage-free grouped splitting (`create_leakage_free_splits`) generates `data/processed/cctv_grouped_manifest.csv` with zero group overlap across train, val, and test splits.
+   - Manifest audit empirically documented that **52 out of 58 video sequence groups (928/989 frames = 93.83%)** cross split boundaries in the raw folder distribution, using the composite `(class_name, video_group)` key (the same raw video ID can appear in both the Accident and Non Accident folders).
+   - Leakage-free grouped splitting (`create_leakage_free_splits`) generates `data/processed/cctv_grouped_manifest.csv` with **0 leaking groups** across train, val, and test splits (train 769 / test 127 / val 93).
    - Baseline feature-engineering model (Color Histograms + Thumbnails + Logistic Regression) achieves 65.0% accuracy vs MobileNetV2 81.0%, proving transfer learning value.
 
 ---
 
 ## 5. Environment Limitations & Remaining Considerations
 - **Open-Meteo API**: Operates on a free, rate-limited public endpoint. Production environments should utilize the local SQLite historical weather cache (`data/processed/roadrisk.db -> weather_cache` table) to avoid external rate limits.
-- **Google Gemini API**: Optional provider. When an API key is not configured, the assistant deterministically falls back to the offline BM25 project documentation synthesizer.
+- **LLM Providers**: Gemini (via the current `google-genai` SDK), Groq, and Hugging Face are all optional. When no provider key is configured, or when an API call fails or times out, the assistant deterministically falls back to the offline BM25 project-documentation synthesizer. No key value is ever logged or rendered.
+- **HeiGIT openrouteservice**: Optional for the "Route & Reachability" tab. When `OPENROUTESERVICE_API_KEY` is absent, the tab shows an informational notice and all other tabs remain fully usable.
 - **Hardware Acceleration**: Deep learning inference runs on edge CPU via MobileNetV2 with an average latency of ~35–50 ms (~20–28 FPS). CUDA GPU acceleration is automatically detected and leveraged if available.

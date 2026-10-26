@@ -34,7 +34,7 @@ platform built as an educational portfolio project. It demonstrates the integrat
 - **Machine Learning** — Supervised classification of accident severity
 - **Geospatial Analysis** — Spatial clustering and hotspot mapping
 - **Computer Vision** — CCTV frame classification for accident detection
-- **GenAI** — Gemini-powered conversational road safety assistant
+- **GenAI** — Pluggable LLM provider layer (Gemini / Groq / Hugging Face) with an offline grounded RAG assistant
 - **Explainable AI** — SHAP-based model interpretation
 - **Interactive Dashboards** — Professional Streamlit-based analytics interface
 """)
@@ -60,11 +60,13 @@ with col2:
     - Folium
     - Streamlit
     - GeoPandas
+    - HeiGIT openrouteservice
     """)
 with col3:
     st.markdown("""
     **AI & Vision**
-    - Google Gemini API
+    - Google Gemini API (google-genai)
+    - Groq / Hugging Face (optional)
     - PyTorch
     - OpenCV
     - Open-Meteo API
@@ -103,7 +105,7 @@ st.markdown("""
 - **ML predictions are demonstrations** — Not suitable for operational safety decisions without expert review
 - **CCTV classification is offline** — Frame-level classification, not real-time video detection
 - **Data coverage gaps** — Each dataset covers specific regions, timeframes, and schemas
-- **Free-tier API limits** — Gemini and weather APIs have rate limits and quotas
+- **Free-tier API limits** — LLM (Gemini/Groq/Hugging Face), routing (openrouteservice), and weather APIs have rate limits and quotas; the app falls back to offline mode
 - **Deployment constraints** — Streamlit Community Cloud has resource and storage limits
 """)
 
