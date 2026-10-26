@@ -14,7 +14,6 @@ from sklearn.metrics import (
     recall_score,
     f1_score,
     confusion_matrix,
-    classification_report,
 )
 import plotly.figure_factory as ff
 import plotly.graph_objects as go

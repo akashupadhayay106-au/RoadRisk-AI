@@ -9,26 +9,15 @@ Includes comparative benchmark diagnostics, confusion matrices, and probabilitie
 import json
 import streamlit as st
 import pandas as pd
-import numpy as np
 import plotly.express as px
-import plotly.graph_objects as go
-import joblib
-from pathlib import Path
 
-from src.config import PAGE_CONFIG, MODELS_DIR, PROCESSED_DIR, COLORS
+from src.config import PAGE_CONFIG, MODELS_DIR
 from src.utils import (
     inject_custom_css,
     setup_sidebar,
     section_header,
-    render_kpi_row,
-    info_card,
-    status_badge,
 )
 from src.features import get_time_of_day
-from src.train_severity_model import (
-    SeverityInferencePipeline,
-    train_and_compare_models,
-)
 from src.evaluate_model import plot_confusion_matrix_plotly
 
 st.set_page_config(**PAGE_CONFIG)

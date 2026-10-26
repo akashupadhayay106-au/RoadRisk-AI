@@ -15,12 +15,10 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-import time
 import streamlit as st
-import pandas as pd
 
-from src.config import PAGE_CONFIG, get_secret
-from src.utils import inject_custom_css, setup_sidebar, section_header, info_card, status_badge
+from src.config import PAGE_CONFIG
+from src.utils import inject_custom_css, setup_sidebar
 from src.ai_assistant import ask_roadrisk_assistant, get_provider_status
 
 # ── Streamlit Page Setup ───────────────────────────────────────────────────────

@@ -10,16 +10,13 @@ import time
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-from pathlib import Path
 
-from src.config import PAGE_CONFIG, DATABASE_PATH, COLORS
+from src.config import PAGE_CONFIG, DATABASE_PATH
 from src.utils import (
     inject_custom_css,
     setup_sidebar,
     section_header,
-    render_kpi_row,
     info_card,
-    status_badge,
 )
 from src.database import (
     execute_query,
@@ -28,10 +25,6 @@ from src.database import (
 )
 from src.sql_queries import (
     PREDEFINED_QUERIES,
-    get_overall_kpis,
-    get_monthly_trends,
-    get_city_comparisons,
-    get_severity_distribution,
 )
 
 st.set_page_config(**PAGE_CONFIG)
@@ -65,7 +58,7 @@ db_size_mb = round(db_summary["size_bytes"] / (1024 * 1024), 2)
 
 col1, col2, col3, col4 = st.columns(4)
 with col1:
-    st.markdown(f"**Database:** `roadrisk.db`")
+    st.markdown("**Database:** `roadrisk.db`")
 with col2:
     st.markdown(f"**Total Records:** `{total_records:,}`")
 with col3:

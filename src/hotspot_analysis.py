@@ -6,14 +6,14 @@ computes cluster centroids and density metrics, and prepares interactive
 Plotly and Folium spatial visualizations.
 """
 
-from typing import Dict, Any, Tuple, Optional, List
+from typing import Tuple, Optional
 import numpy as np
 import pandas as pd
 from sklearn.cluster import DBSCAN
 import plotly.express as px
 import plotly.graph_objects as go
 import folium
-from folium.plugins import HeatMap, MarkerCluster
+from folium.plugins import HeatMap
 
 from src.database import execute_query
 from src.data_loader import load_urban_gb_dataset

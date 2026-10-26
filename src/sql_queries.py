@@ -5,7 +5,7 @@ Parameterized SQL queries and high-level analytical query wrappers
 operating directly against the SQLite database.
 """
 
-from typing import Dict, Any, List, Optional, Tuple
+from typing import Dict, Any, Optional
 import pandas as pd
 from src.database import execute_query
 

@@ -13,10 +13,9 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from datetime import datetime, date
+from datetime import date
 import streamlit as st
 import pandas as pd
-import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
 
@@ -30,13 +29,11 @@ from src.utils import (
     status_badge,
     export_dataframe_ui,
 )
-from src.database import get_database_connection, execute_query
+from src.database import get_database_connection
 from src.weather_client import (
     fetch_historical_weather,
     get_incident_weather_match,
     compute_weather_risk_metrics,
-    get_wmo_metadata,
-    WMO_CODE_MAP,
     init_weather_cache,
 )
 
@@ -82,7 +79,7 @@ def load_accident_weather_data() -> pd.DataFrame:
         df = pd.read_sql_query(query, conn)
         conn.close()
         return df
-    except Exception as e:
+    except Exception:
         csv_path = PROCESSED_DIR / "indian_roads_cleaned.csv"
         if csv_path.exists():
             return pd.read_csv(csv_path)

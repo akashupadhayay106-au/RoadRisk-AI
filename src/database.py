@@ -16,7 +16,7 @@ if str(PROJECT_ROOT) not in sys.path:
 
 import sqlite3
 import logging
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, Optional
 import pandas as pd
 
 from src.config import DATABASE_PATH, PROCESSED_DIR, RAW_DATA_DIR, ensure_directories

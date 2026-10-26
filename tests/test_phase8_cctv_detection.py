@@ -16,13 +16,11 @@ if str(PROJECT_ROOT) not in sys.path:
 import pytest
 import json
 import numpy as np
-import pandas as pd
 from PIL import Image
 import torch
 
 from src.cctv_preprocessing import (
     CLASS_NAMES,
-    CLASS_TO_IDX,
     scan_cctv_manifest,
     get_image_transforms,
     load_cctv_dataset,

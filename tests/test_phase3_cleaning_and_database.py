@@ -6,8 +6,6 @@ indexing, safety checks against injection/destructive SQL, and query functions.
 """
 
 import pytest
-import sqlite3
-import pandas as pd
 from pathlib import Path
 import tempfile
 
@@ -21,12 +19,10 @@ from src.database import (
     load_data_to_database,
     execute_query,
     get_database_summary,
-    get_db_connection,
 )
 from src.sql_queries import (
     get_overall_kpis,
     get_monthly_trends,
-    get_severity_distribution,
     get_city_comparisons,
     PREDEFINED_QUERIES,
 )

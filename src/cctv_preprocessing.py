@@ -14,9 +14,8 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-import os
 import logging
-from typing import Dict, Any, List, Tuple, Optional
+from typing import Dict, Any, Optional
 import pandas as pd
 from PIL import Image
 
@@ -300,7 +299,7 @@ def load_cctv_dataset(
     Accepts split_col ('split' for naive directory split, 'grouped_split' for leakage-free split).
     """
     try:
-        import torch
+        import torch  # noqa: F401  (intentional availability probe)
         from torch.utils.data import Dataset
     except ImportError:
         raise ImportError("torch is required for CCTV Dataset operations.")

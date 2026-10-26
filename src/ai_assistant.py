@@ -20,10 +20,10 @@ import json
 import logging
 from typing import Dict, Any, List, Optional, Tuple
 
-from src.config import get_secret, DATABASE_PATH, MODELS_DIR, PROCESSED_DIR
+from src.config import get_secret, MODELS_DIR, PROCESSED_DIR
 from src.rag_pipeline import retrieve_project_context
 from src.providers import generate_with_fallback, provider_statuses
-from src.sql_queries import get_overall_kpis, get_monthly_trends
+from src.sql_queries import get_overall_kpis
 from src.database import execute_query
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")

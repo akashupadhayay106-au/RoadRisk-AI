@@ -28,15 +28,13 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torchvision import models
 
-from src.config import MODELS_DIR, CCTV_TRAIN_DIR, CCTV_TEST_DIR, CCTV_VAL_DIR
+from src.config import MODELS_DIR
 from src.cctv_preprocessing import (
     CLASS_NAMES,
     CLASS_TO_IDX,
     IDX_TO_CLASS,
-    IMAGE_SIZE,
     get_image_transforms,
     scan_cctv_manifest,
-    load_cctv_dataset,
     get_cctv_dataloaders,
 )
 
@@ -540,7 +538,6 @@ def evaluate_cctv_baseline(
     train_duration = round(time.time() - start_t, 3)
 
     y_pred = clf.predict(X_test)
-    y_proba = clf.predict_proba(X_test)[:, 0]  # prob of Accident (class 0)
 
     acc = float(accuracy_score(y_test, y_pred))
     prec = float(precision_score(y_test, y_pred, average="macro", zero_division=0))
@@ -629,7 +626,6 @@ def sample_video_frames(
         fps = 25.0  # standard fallback CCTV FPS
 
     frame_interval = max(1, int(round(fps * sample_interval_sec)))
-    total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
 
     sampled_results = []
     current_frame = 0

@@ -5,22 +5,17 @@ Tests verifying feature isolation, leakage exclusion, preprocessor transformatio
 metrics computation, and serialized model inference.
 """
 
-import json
 import pytest
 import pandas as pd
 import numpy as np
-import joblib
-from pathlib import Path
 
 from src.config import MODELS_DIR, PROCESSED_DIR
 from src.features import (
     prepare_training_data,
     build_preprocessor,
     LEAKAGE_FEATURES,
-    get_feature_lists,
 )
 from src.evaluate_model import compute_classification_metrics
-from src.train_severity_model import SeverityInferencePipeline
 
 
 class TestFeatureEngineering:

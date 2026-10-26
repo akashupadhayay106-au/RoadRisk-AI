@@ -16,26 +16,17 @@ from pathlib import Path
 
 from src.config import (
     PAGE_CONFIG,
-    APP_TITLE,
     APP_SUBTITLE,
     APP_VERSION,
-    COLORS,
     DATASETS,
     PROJECT_ROOT,
     RAW_DATA_DIR,
-    INDIAN_ACCIDENTS_FILE,
-    SEVERITY_TRAIN_FILE,
-    URBAN_GB_COORDS_FILE,
-    OPENCITY_FILE,
     CCTV_TRAIN_DIR,
     ensure_directories,
 )
 from src.utils import (
     inject_custom_css,
-    kpi_card,
-    render_kpi_row,
     section_header,
-    info_card,
     status_badge,
     setup_sidebar,
 )

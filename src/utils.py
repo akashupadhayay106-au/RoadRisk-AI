@@ -7,7 +7,6 @@ Shared helpers used across the application: caching, formatting, UI widgets.
 import streamlit as st
 import pandas as pd
 from pathlib import Path
-from src.config import COLORS, APP_TITLE
 
 
 # ── CSS Injection ────────────────────────────────────────────────────────────

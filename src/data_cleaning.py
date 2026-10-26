@@ -17,15 +17,11 @@ if str(PROJECT_ROOT) not in sys.path:
 
 from typing import Dict, Any, Tuple
 import pandas as pd
-import numpy as np
 
 from src.config import (
     RAW_DATA_DIR,
     PROCESSED_DIR,
     INDIAN_ACCIDENTS_FILE,
-    SEVERITY_TRAIN_FILE,
-    SEVERITY_TEST_FILE,
-    OPENCITY_FILE,
     ensure_directories,
 )
 from src.data_validation import validate_coordinates

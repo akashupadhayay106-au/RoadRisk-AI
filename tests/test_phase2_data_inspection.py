@@ -6,22 +6,15 @@ and conform to schema, geographic bounds, and data quality requirements.
 """
 
 import pytest
-import pandas as pd
-from pathlib import Path
-from src.config import PROJECT_ROOT
 from src.data_loader import (
     find_dataset_file,
     load_indian_roads_dataset,
     load_severity_train_dataset,
-    load_severity_test_dataset,
     load_urban_gb_dataset,
-    load_opencity_dataset,
     get_cctv_image_manifest,
 )
 from src.data_validation import (
-    validate_coordinates,
     check_dataframe_coordinates,
-    generate_data_quality_report,
     detect_target_leakage_features,
 )
 

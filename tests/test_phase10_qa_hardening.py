@@ -13,17 +13,13 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 import pytest
-import numpy as np
 import pandas as pd
-from PIL import Image
 
 from src.data_validation import validate_coordinates, validate_date_string
-from src.config import get_secret, DATASETS
+from src.config import get_secret
 from src.features import (
     LEAKAGE_FEATURES,
     PRE_CRASH_CATEGORICAL_FEATURES,
-    PRE_CRASH_NUMERIC_FEATURES,
-    TARGET_COLUMN,
     prepare_training_data,
 )
 from src.database import execute_query, check_database_integrity

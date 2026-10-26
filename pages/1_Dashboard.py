@@ -8,11 +8,10 @@ and environmental associations.
 
 import streamlit as st
 import pandas as pd
-import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
 
-from src.config import PAGE_CONFIG, COLORS
+from src.config import PAGE_CONFIG
 from src.utils import (
     inject_custom_css,
     setup_sidebar,
@@ -22,9 +21,6 @@ from src.utils import (
 )
 from src.database import execute_query, DATABASE_PATH, load_data_to_database
 from src.sql_queries import (
-    get_overall_kpis,
-    get_monthly_trends,
-    get_day_hour_heatmap_matrix,
     get_state_comparisons,
     get_city_comparisons,
     get_vehicle_collision_breakdown,

@@ -16,7 +16,7 @@ if str(PROJECT_ROOT) not in sys.path:
 
 import json
 import logging
-from typing import Dict, Any, Tuple, Optional
+from typing import Dict, Any, Tuple
 import pandas as pd
 import numpy as np
 import joblib

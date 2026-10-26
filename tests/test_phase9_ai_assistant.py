@@ -12,13 +12,10 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-import pytest
-import unittest.mock as mock
 
 from src.rag_pipeline import (
     MIN_QUERY_COVERAGE,
     _term_matched,
-    chunk_markdown_document,
     build_documentation_index,
     retrieve_project_context,
 )
@@ -28,7 +25,6 @@ from src.ai_assistant import (
     tool_get_top_states,
     tool_get_weather_risk_summary,
     tool_get_model_telemetry,
-    generate_offline_grounded_response,
     ask_roadrisk_assistant,
 )
 

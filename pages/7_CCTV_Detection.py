@@ -15,9 +15,7 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 import json
-import time
 import streamlit as st
-import numpy as np
 import pandas as pd
 from PIL import Image
 import plotly.express as px
@@ -25,10 +23,7 @@ import plotly.graph_objects as go
 
 from src.config import (
     PAGE_CONFIG,
-    CCTV_TRAIN_DIR,
     CCTV_TEST_DIR,
-    CCTV_VAL_DIR,
-    MODELS_DIR,
 )
 from src.utils import (
     inject_custom_css,
@@ -36,22 +31,17 @@ from src.utils import (
     section_header,
     metric_card,
     info_card,
-    status_badge,
 )
 from src.cctv_preprocessing import (
     scan_cctv_manifest,
     audit_split_leakage,
-    create_leakage_free_splits,
-    CLASS_NAMES,
 )
 from src.cctv_inference import (
     load_cctv_model,
     predict_cctv_frame,
     generate_cctv_gradcam,
     sample_video_frames,
-    evaluate_cctv_baseline,
     CCTV_METRICS_PATH,
-    CCTV_MODEL_PATH,
     CCTV_BASELINE_METRICS_PATH,
 )
 

@@ -15,16 +15,13 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 import streamlit as st
-import pandas as pd
 import plotly.express as px
-import plotly.graph_objects as go
 
 from src.config import PAGE_CONFIG
 from src.utils import inject_custom_css, setup_sidebar, section_header, metric_card, info_card
 from src.explainability import (
     get_global_feature_importance,
     explain_single_prediction,
-    get_causal_disclaimer,
     load_severity_artifact,
 )
 

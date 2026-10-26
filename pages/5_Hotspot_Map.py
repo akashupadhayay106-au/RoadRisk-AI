@@ -7,8 +7,6 @@ and separate international benchmark analysis (UrbanGB Great Britain).
 """
 
 import streamlit as st
-import pandas as pd
-import numpy as np
 import plotly.graph_objects as go
 from streamlit_folium import st_folium
 
@@ -22,7 +20,6 @@ from src.utils import (
 )
 from src.database import execute_query, DATABASE_PATH, load_data_to_database
 from src.hotspot_analysis import (
-    compute_dbscan_hotspots,
     get_city_accident_clusters,
     get_urbangb_hotspot_clusters,
     build_cluster_scatter_mapbox,

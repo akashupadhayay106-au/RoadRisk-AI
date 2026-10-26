@@ -13,14 +13,12 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-import pytest
 import sqlite3
 import pandas as pd
 import numpy as np
 
 from src.weather_client import (
     get_wmo_metadata,
-    WMO_CODE_MAP,
     make_cache_key,
     init_weather_cache,
     save_weather_to_cache,
@@ -30,7 +28,6 @@ from src.weather_client import (
     get_incident_weather_match,
     compute_weather_risk_metrics,
 )
-from src.config import DATABASE_PATH
 
 
 class TestWMOInterpretation:

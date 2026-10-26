@@ -5,15 +5,10 @@ Tests verifying multi-faceted filtering queries, day-hour heatmap matrix,
 state benchmarks, vehicle collision dynamics, and single-record dossier retrieval.
 """
 
-import pytest
-import pandas as pd
-from src.database import execute_query
 from src.sql_queries import (
     get_overall_kpis,
-    get_monthly_trends,
     get_day_hour_heatmap_matrix,
     get_state_comparisons,
-    get_city_comparisons,
     get_vehicle_collision_breakdown,
     get_detailed_accident_record,
 )

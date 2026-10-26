@@ -5,8 +5,8 @@ Module K: Project purpose, sources, methodology, and responsible AI.
 """
 
 import streamlit as st
-from src.config import PAGE_CONFIG, APP_VERSION, DATASETS, COLORS
-from src.utils import inject_custom_css, setup_sidebar, section_header, info_card
+from src.config import PAGE_CONFIG, APP_VERSION, DATASETS
+from src.utils import inject_custom_css, setup_sidebar, section_header
 
 st.set_page_config(**PAGE_CONFIG)
 inject_custom_css()

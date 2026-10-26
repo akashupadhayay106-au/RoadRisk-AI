@@ -208,7 +208,7 @@ class GeminiProvider(LLMProvider):
         if not self.is_configured():
             return None
         try:
-            from google import genai
+            from google import genai  # noqa: F401  (intentional availability probe)
             from google.genai import types
         except ImportError:
             logger.warning("`google-genai` is not installed; skipping Gemini.")

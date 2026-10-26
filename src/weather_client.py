@@ -22,16 +22,13 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 import sqlite3
-import json
 import logging
-import time
-from datetime import datetime, date
-from typing import Dict, Any, List, Optional, Tuple, Union
+from typing import Dict, Any, List, Optional, Union
 import pandas as pd
 import numpy as np
 import requests
 
-from src.config import DATABASE_PATH, PROCESSED_DIR, ensure_directories
+from src.config import DATABASE_PATH, ensure_directories
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger(__name__)
@@ -494,7 +491,6 @@ def compute_weather_risk_metrics(df_accidents: pd.DataFrame) -> Dict[str, Any]:
         label = "Adverse Weather (Rain/Fog/Storm)" if is_adv else "Normal Weather (Clear/Cloudy)"
         fatal_count = (grp["severity_clean"] == "Fatal").sum()
         serious_count = (grp["severity_clean"] == "Serious").sum()
-        minor_count = (grp["severity_clean"].isin(["Minor", "Slight"])).sum()
         total_grp = len(grp)
 
         adverse_stats[label] = {
