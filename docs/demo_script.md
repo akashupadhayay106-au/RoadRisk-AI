@@ -43,5 +43,5 @@
 
 ### 4:30 – 5:00 | QA & Engineering Rigor Conclusion
 - **Talking Points**:
-  - *"The codebase is backed by 167 passing unit, integration, UI-smoke and API-mocking tests across 13 phases, with zero warnings on clean Python compilation."*
+  - *"The codebase is backed by 179 passing unit, integration, UI-smoke and API-mocking tests across 13 phases, with zero warnings on clean Python compilation."*
   - *"Thank you! I welcome any questions regarding the architecture, ETL, or modeling choices."*

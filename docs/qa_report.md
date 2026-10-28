@@ -1,13 +1,13 @@
 # RoadRisk AI — Comprehensive QA, Security & Validation Report
 
 ## 1. Executive QA Summary
-- **Execution Date**: October 24, 2026
+- **Execution Date**: October 28, 2026
 - **Target Runtime**: Python 3.12.7 (Windows x86_64)
 - **Total Test Suites**: 13 test modules (`tests/test_phase1.py` through `tests/test_phase13_ui_smoke.py`)
-- **Total Tests Executed**: **167**
-- **Tests Passed**: **167** (100.0% pass rate)
+- **Total Tests Executed**: **179**
+- **Tests Passed**: **179** (100.0% pass rate)
 - **Tests Failed / Errors**: **0**
-- **Full Test Suite Runtime**: ~67.9 seconds
+- **Full Test Suite Runtime**: ~164.5 seconds
 - **Static Compilation (`compileall`)**: 100% clean compilation across all `src/`, `pages/`, `tests/`, and `app.py` files with zero syntax errors and zero warnings.
 
 ---
@@ -16,7 +16,7 @@
 
 | Test Module | Phase / Domain | Tests | Status | Key Coverage |
 | :--- | :--- | :---: | :---: | :--- |
-| `test_phase1.py` | Architecture & Config | 16 | PASSED | Directory trees, config constants, coordinate bounds, date parsing, data loaders. |
+| `test_phase1.py` | Architecture & Config | 17 | PASSED | Directory trees, config constants, coordinate bounds, date parsing, data loaders. |
 | `test_phase2_data_inspection.py` | Dataset Auditing | 12 | PASSED | File presence, raw schemas, India coordinate bounds, UK coordinate bounds, leakage flags. |
 | `test_phase3_cleaning_and_database.py` | ETL & SQLite | 12 | PASSED | Cleaning pipelines, SQLite tables, indexing, read-only query enforcement, KPI queries. |
 | `test_phase4_dashboard_analytics.py` | Analytics Engine | 6 | PASSED | Multi-filter parameterized queries, day-hour heatmaps, state comparisons, single-record dossiers. |
@@ -24,12 +24,12 @@
 | `test_phase6_hotspot_analysis.py` | Geospatial Clustering | 6 | PASSED | DBSCAN clustering, Haversine metric, Mumbai blackspots, UrbanGB UK clustering, Mapbox builders. |
 | `test_phase7_weather_analysis.py` | Weather Risk Engine | 13 | PASSED | WMO code interpretation, SQLite weather cache CRUD, offline fallback generation, risk multipliers. |
 | `test_phase8_cctv_detection.py` | CCTV Computer Vision | 14 | PASSED | MobileNetV2 architecture, inference latency, Grad-CAM overlays, sequence leakage audit, baseline model, video frame sampling. |
-| `test_phase9_ai_assistant.py` | Grounded GenAI & RAG | 17 | PASSED | BM25 document indexing, prompt injection defense, SQL injection blocking, offline grounded fallback, uncertainty reporting. |
+| `test_phase9_ai_assistant.py` | Grounded GenAI & RAG | 22 | PASSED | BM25 document indexing, prompt injection defense, SQL injection blocking, offline grounded fallback, uncertainty reporting. |
 | `test_phase10_qa_hardening.py` | QA & Security Hardening | 13 | PASSED | Malformed inputs, database integrity checks, global feature importance, local prediction attribution, secret protection. |
 | `test_phase11_providers.py` | LLM Provider Abstraction | 18 | PASSED | Gemini/Groq/Hugging Face request payloads, timeouts, provider fallback chain, secret-free status descriptors, no-API-key path. |
 | `test_phase12_routing.py` | Routing & Weather Status | 14 | PASSED | openrouteservice auth header and `[lon, lat]` ordering, isochrones, geocoding, keyless weather status. |
-| `test_phase13_ui_smoke.py` | UI Smoke & Structure | 14 | PASSED | Exactly 10 pages, per-page compilation, Home page renders without exception (`AppTest`), no stale "pending" module flags. |
-| **Total** | | **167** | **ALL PASSED** | |
+| `test_phase13_ui_smoke.py` | UI Smoke & Structure | 26 | PASSED | Exactly 10 pages, per-page compilation, every page renders without exception (`AppTest`), every `from src... import` resolves, Plotly confusion-matrix builder, no stale "pending" module flags. |
+| **Total** | | **179** | **ALL PASSED** | |
 
 ---
 

@@ -8,7 +8,7 @@
 - Implemented edge-optimized CCTV accident classification via **MobileNetV2** transfer learning (~9.2 MB footprint, ~35–50 ms CPU inference); generated **Grad-CAM** visual attention heatmaps to localize vehicle collision zones.
 - Audited surveillance video dataset splits and identified **cross-split sequence leakage affecting 93.83% of all frames (52/58 video groups)**; engineered a prefix-based grouping heuristic and GroupShuffleSplit generator (`cctv_grouped_manifest.csv`) to establish realistic out-of-sample generalization.
 - Developed a dual-mode **Grounded GenAI Assistant** over a pluggable LLM provider layer (Google Gemini via the current `google-genai` SDK, Groq, Hugging Face) with timeouts and automatic fallback to an offline **BM25 RAG engine** indexing local Markdown documentation; prevented prompt injection and restricted database operations to parameterized, read-only SQL queries.
-- Architected comprehensive automated QA suite with **167 unit, integration, UI-smoke and API-mocking tests across 13 phases** achieving 100% pass rate, coupled with static analysis (`compileall`) with zero compilation warnings.
+- Architected comprehensive automated QA suite with **179 unit, integration, UI-smoke and API-mocking tests across 13 phases** achieving 100% pass rate, coupled with static analysis (`compileall`) with zero compilation warnings.
 
 ---
 

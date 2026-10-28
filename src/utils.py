@@ -1,251 +1,127 @@
 """
-RoadRisk AI — Utility Functions
-================================
-Shared helpers used across the application: caching, formatting, UI widgets.
+RoadRisk AI — Shared UI Utilities & Components
+================================================
+Presentation helpers used by the entry point and every page: the premium
+design-system CSS injection, KPI/metric cards, headers, state blocks,
+status indicators, sidebar chrome, and lightweight data-loading helpers.
+
+The heavy CSS lives in ``src.theme`` so pages never duplicate style logic.
 """
 
-import streamlit as st
-import pandas as pd
 from pathlib import Path
 
+import pandas as pd
+import streamlit as st
 
-# ── CSS Injection ────────────────────────────────────────────────────────────
+from src.config import APP_VERSION, PROJECT_ROOT
+from src.theme import PAGE_CSS
+
+# A local developer checkout has a ``.git`` directory; a public deployment
+# (Streamlit Community Cloud) ships tracked files only, so this is a reliable,
+# deterministic way to label the running environment without any secrets.
+_IS_LOCAL_CHECKOUT = (PROJECT_ROOT / ".git").exists()
+
+
+def _env_label() -> str:
+    """Return a short deployment-context label ('LOCAL' or 'PUBLIC')."""
+    return "LOCAL" if _IS_LOCAL_CHECKOUT else "PUBLIC"
+
+
+# ── CSS / Ambient Layer Injection ────────────────────────────────────────────
+
+def _inject_pointer_spotlight() -> None:
+    """Optional pointer-following light enhancer (best-effort, never fatal).
+
+    Rendered inside a sandboxed same-origin iframe; when the browser permits
+    parent access it sets ``--px/--py`` CSS variables on the app root so the
+    ``.rdx-glow`` layer and KPI cards follow the cursor. When blocked, the
+    static radial fallback in the stylesheet keeps the design intact.
+    """
+    try:
+        st.components.v1.html(
+            "<script>try{var d=window.parent.document;"
+            "function u(e){d.documentElement.style.setProperty('--px',e.clientX+'px');"
+            "d.documentElement.style.setProperty('--py',e.clientY+'px')}"
+            "d.addEventListener('mousemove',u,{passive:true})}catch(e){}</script>",
+            height=1,
+        )
+    except Exception:  # pragma: no cover - cosmetic enhancement only
+        pass
+
 
 def inject_custom_css() -> None:
-    """Inject the global custom CSS for the RoadRisk AI dark theme."""
-    st.markdown("""
-    <style>
-    /* ── Import Google Font ───────────────────────────────────── */
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+    """Inject the premium dark-theme design system once per script run."""
+    st.markdown(f"<style>{PAGE_CSS}</style>", unsafe_allow_html=True)
+    st.markdown('<div class="rdx-glow" aria-hidden="true"></div>', unsafe_allow_html=True)
+    _inject_pointer_spotlight()
 
-    /* ── Global ────────────────────────────────────────────────── */
-    html, body, [class*="css"] {
-        font-family: 'Inter', sans-serif;
-    }
 
-    /* ── KPI Card ──────────────────────────────────────────────── */
-    .kpi-card {
-        background: linear-gradient(135deg, #1A1F2C 0%, #252B3B 100%);
-        border: 1px solid rgba(255,255,255,0.06);
-        border-radius: 16px;
-        padding: 1.5rem;
-        text-align: center;
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
-    }
-    .kpi-card:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 8px 30px rgba(0,0,0,0.3);
-    }
-    .kpi-value {
-        font-size: 2.2rem;
-        font-weight: 800;
-        margin: 0.3rem 0;
-        background: linear-gradient(135deg, #FF4B4B, #FF8C42);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-    }
-    .kpi-label {
-        font-size: 0.85rem;
-        color: #8899A6;
-        text-transform: uppercase;
-        letter-spacing: 0.08em;
-        font-weight: 600;
-    }
-    .kpi-icon {
-        font-size: 1.6rem;
-        margin-bottom: 0.3rem;
-    }
+# ── Page Header / Breadcrumb ─────────────────────────────────────────────────
 
-    /* ── Section Header ────────────────────────────────────────── */
-    .section-header {
-        font-size: 1.3rem;
-        font-weight: 700;
-        color: #FAFAFA;
-        margin: 1.5rem 0 0.8rem 0;
-        padding-bottom: 0.5rem;
-        border-bottom: 2px solid #FF4B4B;
-        display: inline-block;
-    }
+def page_header(
+    title: str,
+    section: str = "",
+    subtitle: str = "",
+    icon: str = "🚦",
+    accent: str = "cyan",
+) -> None:
+    """Render the premium page hero: breadcrumb + gradient title + subtitle.
 
-    /* ── Info Card ─────────────────────────────────────────────── */
-    .info-card {
-        background: linear-gradient(135deg, #1A1F2C 0%, #252B3B 100%);
-        border-left: 4px solid #4DA8FF;
-        border-radius: 8px;
-        padding: 1rem 1.2rem;
-        margin: 0.5rem 0;
-        color: #FAFAFA;
-    }
+    ``accent`` selects one of the ``grad-*`` classes (cyan, teal, amber, red,
+    indigo, mono) so each module keeps its own identity within one system.
+    """
+    crumb_html = ""
+    if section:
+        crumb_html = (
+            '<div class="crumb">'
+            '<span class="cred">RoadRisk AI</span>'
+            '<span class="sep">/</span>'
+            f"<span>{section}</span>"
+            "</div>"
+        )
+    subtitle_html = f'<p class="page-subtitle">{subtitle}</p>' if subtitle else ""
+    st.markdown(
+        f'<div class="page-hero">{crumb_html}'
+        f'<h1><span class="grad-{accent}">{icon} {title}</span></h1>'
+        f"{subtitle_html}</div>",
+        unsafe_allow_html=True,
+    )
 
-    /* ── Sidebar Branding ─────────────────────────────────────── */
-    [data-testid="stSidebar"] {
-        background: linear-gradient(180deg, #0E1117 0%, #1A1F2C 100%);
-    }
-    .sidebar-title {
-        font-size: 1.4rem;
-        font-weight: 800;
-        text-align: center;
-        padding: 1rem 0 0.5rem;
-        background: linear-gradient(135deg, #FF4B4B, #FF8C42);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-    }
-    .sidebar-subtitle {
-        font-size: 0.75rem;
-        color: #8899A6;
-        text-align: center;
-        margin-bottom: 1.5rem;
-    }
 
-    /* ── Status Badge ─────────────────────────────────────────── */
-    .status-badge {
-        display: inline-block;
-        padding: 0.25rem 0.8rem;
-        border-radius: 20px;
-        font-size: 0.75rem;
-        font-weight: 600;
-    }
-    .status-ready {
-        background: rgba(0,200,83,0.15);
-        color: #00C853;
-        border: 1px solid rgba(0,200,83,0.3);
-    }
-    .status-pending {
-        background: rgba(255,214,0,0.15);
-        color: #FFD600;
-        border: 1px solid rgba(255,214,0,0.3);
-    }
-    .status-error {
-        background: rgba(255,23,68,0.15);
-        color: #FF1744;
-        border: 1px solid rgba(255,23,68,0.3);
-    }
+def status_chip(label: str, state: str = "ok") -> str:
+    """Return HTML for a compact status chip. state: ok | warn | err | info."""
+    return f'<span class="chip chip-{state}"><span class="dot"></span>{label}</span>'
 
-    /* ── Metric Card (compact accent KPI) ─────────────────────── */
-    .metric-card {
-        background: linear-gradient(135deg, #1A1F2C 0%, #252B3B 100%);
-        border: 1px solid rgba(255,255,255,0.06);
-        border-left: 4px solid #4DA8FF;
-        border-radius: 12px;
-        padding: 0.9rem 1rem;
-        height: 100%;
-        transition: transform 0.2s ease;
-    }
-    .metric-card:hover { transform: translateY(-2px); }
-    .metric-label {
-        font-size: 0.72rem;
-        color: #8899A6;
-        text-transform: uppercase;
-        letter-spacing: 0.07em;
-        font-weight: 600;
-    }
-    .metric-value {
-        font-size: 1.5rem;
-        font-weight: 800;
-        color: #FAFAFA;
-        margin: 0.15rem 0;
-        line-height: 1.15;
-    }
-    .metric-sub { font-size: 0.76rem; color: #8899A6; }
 
-    /* ── Empty / Error / Loading States ───────────────────────── */
-    .state-box {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        text-align: center;
-        gap: 0.35rem;
-        padding: 2rem 1.5rem;
-        margin: 0.75rem 0;
-        border-radius: 14px;
-        background: linear-gradient(135deg, #1A1F2C 0%, #252B3B 100%);
-        border: 1px dashed rgba(255,255,255,0.12);
-    }
-    .state-box.state-error {
-        border: 1px solid rgba(255,23,68,0.45);
-        border-left: 4px solid #FF4B4B;
-    }
-    .state-box.state-empty {
-        border: 1px solid rgba(77,168,255,0.30);
-        border-left: 4px solid #4DA8FF;
-    }
-    .state-icon { font-size: 1.8rem; line-height: 1; }
-    .state-title { font-size: 1rem; font-weight: 700; color: #FAFAFA; }
-    .state-msg { font-size: 0.88rem; color: #B8C4D0; max-width: 60ch; line-height: 1.5; }
-    .state-hint {
-        font-size: 0.78rem;
-        color: #8899A6;
-        margin-top: 0.35rem;
-        border-top: 1px solid rgba(255,255,255,0.08);
-        padding-top: 0.5rem;
-    }
+def render_status_strip(chips: list[str]) -> None:
+    """Render a row of status chips (typically deployment / data-source state)."""
+    st.markdown(
+        f'<div class="status-strip">{"".join(chips)}</div>',
+        unsafe_allow_html=True,
+    )
 
-    /* ── Service / API Status Pills ───────────────────────────── */
-    .svc-row { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; margin: 0.35rem 0 0.75rem 0; }
-    .svc-pill {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.4rem;
-        padding: 0.3rem 0.75rem;
-        border-radius: 999px;
-        font-size: 0.75rem;
-        font-weight: 600;
-        border: 1px solid transparent;
-        white-space: nowrap;
-    }
-    .svc-dot { width: 0.5rem; height: 0.5rem; border-radius: 50%; background: currentColor; flex: none; }
-    .svc-ok   { background: rgba(0,200,83,0.15);  color: #4ADE80; border-color: rgba(0,200,83,0.35); }
-    .svc-off  { background: rgba(255,214,0,0.12); color: #FFD600; border-color: rgba(255,214,0,0.30); }
-    .svc-bad  { background: rgba(255,23,68,0.15); color: #FF6B81; border-color: rgba(255,23,68,0.35); }
 
-    /* ── Accessibility: visible keyboard focus ────────────────── */
-    a:focus-visible,
-    button:focus-visible,
-    [role="button"]:focus-visible,
-    input:focus-visible,
-    select:focus-visible,
-    textarea:focus-visible,
-    summary:focus-visible {
-        outline: 2px solid #4DA8FF;
-        outline-offset: 2px;
-        border-radius: 6px;
-    }
+def hero_kicker(label: str, pulsing: bool = True) -> str:
+    """Return HTML for the animated kicker pill above a page header."""
+    dot = '<span class="pulse-dot"></span>' if pulsing else ""
+    return f'<div class="hero-kicker">{dot}{label}</div>'
 
-    /* ── Responsive / Mobile Coherence ────────────────────────── */
-    @media (max-width: 768px) {
-        .kpi-card { padding: 1rem 0.75rem; border-radius: 12px; }
-        .kpi-value { font-size: 1.55rem; }
-        .kpi-label { font-size: 0.72rem; letter-spacing: 0.05em; }
-        .kpi-icon { font-size: 1.3rem; }
-        .section-header { font-size: 1.05rem; margin: 1.1rem 0 0.6rem 0; }
-        .state-box { padding: 1.35rem 1rem; }
-        .state-msg { font-size: 0.83rem; }
-        .info-card { padding: 0.85rem 0.95rem; font-size: 0.9rem; }
-        .metric-card { padding: 0.75rem 0.85rem; }
-        .metric-value { font-size: 1.25rem; }
-        .sidebar-title { font-size: 1.2rem; }
-    }
 
-    /* ── Respect reduced-motion preferences ───────────────────── */
-    @media (prefers-reduced-motion: reduce) {
-        .kpi-card { transition: none; }
-        .kpi-card:hover { transform: none; }
-    }
-
-    /* ── Hide Streamlit Defaults ──────────────────────────────── */
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-    header {visibility: hidden;}
-    </style>
-    """, unsafe_allow_html=True)
+def skeleton(count: int = 1) -> None:
+    """Render shimmer placeholders (used before heavy content resolves)."""
+    st.markdown('<div class="rdx-skeleton"></div>' * count, unsafe_allow_html=True)
 
 
 # ── KPI Card Widget ──────────────────────────────────────────────────────────
 
 def kpi_card(icon: str, label: str, value: str | int | float, help_text: str | None = None) -> str:
-    """Return HTML for a single KPI card. `help_text` renders as an accessible tooltip."""
-    if isinstance(value, (int, float)):
-        formatted = f"{value:,.0f}" if isinstance(value, (int, float)) and value > 999 else str(value)
+    """Return HTML for a single KPI card. `help_text` renders as a tooltip."""
+    if isinstance(value, bool):
+        formatted = str(value)
+    elif isinstance(value, int):
+        formatted = f"{value:,.0f}"
+    elif isinstance(value, float):
+        formatted = f"{value:,.2f}" if abs(value) < 10 else f"{value:,.1f}"
     else:
         formatted = str(value)
     tooltip = f' title="{help_text}"' if help_text else ""
@@ -273,7 +149,7 @@ def metric_card(
     label: str,
     value: str | int | float,
     sublabel: str = "",
-    border_color: str = "#4DA8FF",
+    border_color: str = "#60A5FA",
 ) -> None:
     """
     Render a compact metric card with a coloured left accent border.
@@ -300,9 +176,6 @@ def export_dataframe_ui(
 ) -> None:
     """
     Render a CSV download button for a DataFrame.
-
-    Kept as a small shared helper so every data table in the app offers the same
-    export affordance and consistent file naming.
     """
     if df is None or df.empty:
         return
@@ -325,7 +198,7 @@ def empty_state(title: str, message: str = "", hint: str = "", icon: str = "🔍
         f'<div class="state-box state-empty">'
         f'<div class="state-icon">{icon}</div>'
         f'<div class="state-title">{title}</div>'
-        f'{msg_html}{hint_html}'
+        f"{msg_html}{hint_html}"
         f"</div>",
         unsafe_allow_html=True,
     )
@@ -339,7 +212,7 @@ def error_state(title: str, message: str = "", hint: str = "", icon: str = "⚠�
         f'<div class="state-box state-error">'
         f'<div class="state-icon">{icon}</div>'
         f'<div class="state-title">{title}</div>'
-        f'{msg_html}{hint_html}'
+        f"{msg_html}{hint_html}"
         f"</div>",
         unsafe_allow_html=True,
     )
@@ -383,7 +256,7 @@ def service_status_row(services: list[dict]) -> None:
     st.markdown(f'<div class="svc-row">{"".join(pills)}</div>', unsafe_allow_html=True)
 
 
-# ── Section Header ───────────────────────────────────────────────────────────
+# ── Section Header / Info Box / Status Badge ─────────────────────────────────
 
 def section_header(title: str, icon: str = "") -> None:
     """Render a styled section header."""
@@ -393,8 +266,6 @@ def section_header(title: str, icon: str = "") -> None:
     )
 
 
-# ── Info Box ─────────────────────────────────────────────────────────────────
-
 def info_card(text: str) -> None:
     """Render a styled information card."""
     st.markdown(
@@ -402,8 +273,6 @@ def info_card(text: str) -> None:
         unsafe_allow_html=True,
     )
 
-
-# ── Status Badge ─────────────────────────────────────────────────────────────
 
 def status_badge(label: str, status: str = "ready") -> str:
     """Return HTML for a status badge. status: 'ready' | 'pending' | 'error'."""
@@ -413,14 +282,17 @@ def status_badge(label: str, status: str = "ready") -> str:
 # ── Sidebar Setup ────────────────────────────────────────────────────────────
 
 def setup_sidebar() -> None:
-    """Render the branded sidebar header."""
+    """Render the premium branded sidebar header (logo, title, version, env)."""
     with st.sidebar:
         st.markdown(
-            '<div class="sidebar-title">🚦 RoadRisk AI</div>',
-            unsafe_allow_html=True,
-        )
-        st.markdown(
-            '<div class="sidebar-subtitle">Road Accident Analysis & Intelligence</div>',
+            f"""
+            <div class="sidebar-brand">
+                <div class="sidebar-logo">🚦</div>
+                <div class="sidebar-title"><span class="grad">RoadRisk AI</span></div>
+                <div class="sidebar-subtitle">Road Safety Intelligence</div>
+                <span class="version-chip">v{APP_VERSION} · {_env_label()}</span>
+            </div>
+            """,
             unsafe_allow_html=True,
         )
         st.divider()
@@ -455,3 +327,4 @@ def format_percentage(n: float, decimals: int = 1) -> str:
     if pd.isna(n):
         return "N/A"
     return f"{n * 100:.{decimals}f}%"
+
